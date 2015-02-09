@@ -13,6 +13,7 @@ public class ElevatorImpl implements Runnable, Elevator{
     private int elevatorID;
 
     private boolean moving;
+    private boolean goingUp;
 
     public ElevatorImpl(int idNum){
         elevatorID = idNum;
@@ -23,12 +24,11 @@ public class ElevatorImpl implements Runnable, Elevator{
     }
 
     public boolean isActive(){
-        if (this.moving) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return this.moving;
+    }
+
+    public boolean isGoingUp(){
+        return goingUp;
     }
 
     public boolean isFull(){

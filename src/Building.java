@@ -9,9 +9,9 @@ import java.util.ArrayList;
 
 public final class Building {
 
-    Integer floors;
-    Integer elevators;
-    ArrayList<Floor> floorList;
+    private Integer floors;
+    private Integer elevators;
+    private ArrayList<Floor> floorList;
 
     private static Building instance = new Building();
 
@@ -19,14 +19,28 @@ public final class Building {
         return instance;
     }
 
+    public int getNumElevators() {
+        return elevators;
+    }
+
+    public int getNumFloors() {
+        return floors;
+    }
+
     public void setFloors(int numFloors) {
         if (floors == null) {
             floors = numFloors;
+            floorList = new ArrayList<Floor>();
         }
         for (int i = 0; i < numFloors; i++) {
-            floorList.add(new Floor(i));
+            floorList.add(new Floor(i + 1));
         }
+    }
 
+    public void setElevators(int numElevators){
+        if (elevators == null){
+            elevators = numElevators;
+        }
     }
 
     // will start a new ElevatorController in final implementation
