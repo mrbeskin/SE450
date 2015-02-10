@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 
 /**
  * This is the elevator interface which defines necessary behavior for
@@ -6,13 +5,13 @@ import java.util.ArrayList;
  *
  * Created by michael on 2/8/15.
  */
-public interface Elevator {
+public interface Elevator extends Runnable {
 
-    boolean isActive();
-    boolean isFull();
-    void move();
+    enum Direction {UP, DOWN, IDLE}
+    Direction getDirection();
+    void handleRequest(int floorNumber);
+    void move(Direction direction);
     void openDoor();
     void closeDoor();
-    void acceptRider();
 
 }

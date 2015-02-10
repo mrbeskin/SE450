@@ -13,7 +13,7 @@ public class Driver {
 
     final static int numFloors = 16;
     final static int numElevators = 4;
-    ArrayList<Elevator> ElevatorList = new ArrayList();
+    static Elevator[] elevatorArray;
 
     public static void startTimer() {
         if (startTime == -1){
@@ -32,21 +32,63 @@ public class Driver {
         return display;
     }
 
+    static void startElevator(Elevator elevator, int destination){
+        elevator.handleRequest(destination);
+        System.out.println(elevator.getDirection());
+        Thread elevatorThread = new Thread (elevator);
+        elevatorThread.start();
+    }
 
-    public static void main(String args[]){
+    static void test1(Elevator[] elevators){
+        startElevator(elevators[0], 11);
+
+        //wait a bit before starting the second elevator
+        try {
+            //thread to sleep for the specified number of milliseconds
+            Thread.sleep(2000);
+        } catch ( java.lang.InterruptedException ie) {
+            System.out.println(ie);
+        }
+
+        startElevator(elevators[1], 14);
+        try {
+            //thread to sleep for the specified number of milliseconds
+            Thread.sleep(2000);
+        } catch ( java.lang.InterruptedException ie) {
+            System.out.println(ie);
+        }
+        elevatorArray[1].handleRequest(13);
+        elevatorArray[1].handleRequest(15);
+
+
+    }
+
+    static void test2(Elevator[] elevators){
+
+    }
+
+
+    public static void main(String args[]) {
 
         startTimer();
 
+        // make the building object
         try {
             Building.getInstance().setFloors(numFloors);
             Building.getInstance().setElevators(numElevators);
         } catch (Exception e) {
-            System.out.println(currentTime() + ":  Failed to build building");
+            System.out.printf("%s:  Failed to build building%n\n", currentTime());
         }
-
+        // container for elevators
+        elevatorArray = new Elevator [numElevators];
+        // construct elevator objects
+        for (int i = 0; i < numElevators; i ++) {
+            elevatorArray[i] = ElevatorFactory.build(i + 1);
+        }
 
         System.out.printf("%s  Building constructed (Floors: %d Elevators: %d)%n",
                 currentTime(), numFloors, numElevators);
 
+        test1(elevatorArray);
     }
 }

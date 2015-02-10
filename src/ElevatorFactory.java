@@ -5,9 +5,9 @@
  */
 public class ElevatorFactory {
 
-    public Elevator build(int elevatorID){
+    public static Elevator build(int elevatorID){
 
-        return new ElevatorImpl(elevatorID);
+        return new ElevatorImpl(elevatorID, 1);
 
     }
 
