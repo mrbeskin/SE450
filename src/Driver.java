@@ -50,66 +50,11 @@ public class Driver {
      * when elevator arrives.
      */
 
-    static class Request {
-        int floor;
-        int request;
-
-        public Request(int floor, int request) {
-            this.floor = floor;
-            this.request = request;
-        }
-    }
-
-    static public ArrayList <Request> fakeFloorRequests = new ArrayList<Request>();
-
-    static public int consumeRequest(Request request){
-        System.out.printf ("Consuming Request floor: %d, request: %d\n", request.floor, request.request);
-        int returnFloor = request.request;
-        fakeFloorRequests.remove(request);
-        System.out.println("the remaining Array:");
-        for(int i = 0; i < fakeFloorRequests.size(); i++){
-            System.out.print(fakeFloorRequests.get(i).floor);
-            System.out.println(fakeFloorRequests.get(i).request);
-        }
-
-        return returnFloor;
-    }
-
-    synchronized static void testNext(Elevator elevator) throws InterruptedException{
-
-        fakeFloorRequests.add(new Request(5, 16));
-        fakeFloorRequests.add(new Request(5, 1));
-        fakeFloorRequests.add(new Request(16, 2));
-        fakeFloorRequests.add(new Request(16, 3));
-        fakeFloorRequests.add(new Request(16, 5));
-        callNewElevator(elevator, 5, startSignal, doneSignal);
-
-
-    }
+    static public ArrayList <Request> pendingRequests = new ArrayList<Request>();
 
     static void test(Elevator[] elevators) throws InterruptedException{
 
-
-        for (int i = 0; i < 2; ++i) // create and start threads
-            // don't let run yet
-            startSignal.countDown();      // let all threads proceed
-
-        callNewElevator(elevators[0], 11, startSignal, doneSignal);
-        //wait a bit before starting the second elevator
-        //thread to sleep for the specified number of milliseconds
-        Thread.sleep(2000);
-        callNewElevator(elevators[1], 14,startSignal, doneSignal);
-        //thread to sleep for the specified number of milliseconds
-        Thread.sleep(2000);
-        elevatorArray[1].call(13);
-        Thread.sleep(1000);
-        elevatorArray[1].call(15);
-        doneSignal.await();
-
-        testNext(elevatorArray[2]);
     }
-
-
 
     public static void main(String args[]) {
 

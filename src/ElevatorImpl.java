@@ -11,9 +11,7 @@ public class ElevatorImpl implements Runnable, Elevator {
 
     private final int homeFloor = 1;
     private final long travelTime = 500;
-    private final long doorToggleTime = 500;
-    CountDownLatch startSignal;
-    CountDownLatch doneSignal;
+    private final long doorTime = 500;
 
     private Direction direction = Direction.IDLE;
     private int elevatorID;
@@ -21,14 +19,12 @@ public class ElevatorImpl implements Runnable, Elevator {
     private boolean active;
     private boolean inUse;
     private int destination;
-    private ArrayList<Integer> floorRequests = new ArrayList<Integer>();
+    private ArrayList<Request> requests = new ArrayList<Request>();
     private ArrayList<Integer> floorCalls = new ArrayList<Integer>();
     private ArrayList<Integer> buttonsPressed = new ArrayList<Integer>();
 
 
-    public ElevatorImpl(int idNum, int startingFloor, CountDownLatch startSignal, CountDownLatch doneSignal) {
-        this.startSignal = startSignal;
-        this.doneSignal = doneSignal;
+    public ElevatorImpl(int idNum, int startingFloor) {
         elevatorID = idNum;
         currentFloor = startingFloor;
     }
@@ -37,6 +33,24 @@ public class ElevatorImpl implements Runnable, Elevator {
         active = true;
 
         while (active) {
+            // if there are no request - wait for a new one.
+            if(requests.isEmpty()){
+                synchronized (requests) {
+                    try {
+                        requests.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+
+            // when there are active requests - handle the requests
+
+
+
+            //if()
+            /*
             try {
                 startSignal.await();
 
@@ -98,21 +112,24 @@ public class ElevatorImpl implements Runnable, Elevator {
 
             } catch (InterruptedException ex) {
             }
+            */
         }
 
     }
 
+    /*
     public void checkRequests() {
         ArrayList<Driver.Request> tempArray = new ArrayList<Driver.Request>();
-        for (int i = 0; i < Driver.fakeFloorRequests.size(); i++) {
-            if (Driver.fakeFloorRequests.get(i).floor == currentFloor) {
-                pushButton(Driver.fakeFloorRequests.get(i).request);
+        for (int i = 0; i < Driver.requests.size(); i++) {
+            if (Driver.requests.get(i).floor == currentFloor) {
+                pushButton(Driver.requests.get(i).request);
             } else {
-                tempArray.add(Driver.fakeFloorRequests.get(i));
+                tempArray.add(Driver.requests.get(i));
             }
         }
-        Driver.fakeFloorRequests = tempArray;
+        Driver.requests = tempArray;
     }
+*/
 
     public Direction getDirection() {
         return direction;
@@ -127,7 +144,7 @@ public class ElevatorImpl implements Runnable, Elevator {
                 ((floorRequest < currentFloor) && (direction == Direction.DOWN)) ||
                 (direction == direction.IDLE)) {
             inUse = true;
-            updateDestination(floorRequest);
+            //updateDestination(floorRequest);
             buttonsPressed.add(floorRequest);
             Collections.sort(buttonsPressed);
             System.out.printf("%s  Elevator %d accepted rider request to floor %d\n",
@@ -143,12 +160,12 @@ public class ElevatorImpl implements Runnable, Elevator {
         System.out.printf("%s  Elevator %d responding to call to floor %d\n",
                 Driver.currentTime(), elevatorID, callFloor);
         floorCalls.add(callFloor);
-        updateDestination(callFloor);
+        // updateDestination(callFloor);
     }
 
     private void openDoor() {
         try {
-            Thread.sleep(doorToggleTime);
+            Thread.sleep(doorTime);
         } catch (InterruptedException e) {
             System.out.printf("Elevator %d door open interrupted.\n", elevatorID);
         }
@@ -159,7 +176,7 @@ public class ElevatorImpl implements Runnable, Elevator {
 
     private void closeDoor() {
         try {
-            Thread.sleep(doorToggleTime);
+            Thread.sleep(doorTime);
         } catch (InterruptedException e) {
             System.out.println("Elevator %d door close interrupted.\n");
         }
@@ -172,6 +189,7 @@ public class ElevatorImpl implements Runnable, Elevator {
      * is heading. Does not change direction unless the elevator
      * is IDLE.
      */
+    /*
     private void updateDestination(int request) {
         floorRequests.add(request);
         Collections.sort(floorRequests);
@@ -193,6 +211,9 @@ public class ElevatorImpl implements Runnable, Elevator {
      * All movement is called via run as a reaction
      * to a public method.
      */
+
+
+
     private void move(Direction direction) {
         // for print statement
         int departed = currentFloor;
@@ -203,13 +224,11 @@ public class ElevatorImpl implements Runnable, Elevator {
         } catch (InterruptedException e) {
             System.out.printf("Elevator %d move interrupted.\n", elevatorID);
         }
-
         if (direction == Direction.UP) {
             currentFloor++;
         } else if (direction == Direction.DOWN) {
             currentFloor--;
         }
-
         System.out.printf("%s  Elevator %d moved from floor %d to floor %d %s\n",
                 Driver.currentTime(), elevatorID, departed, currentFloor, destinationString());
     }
