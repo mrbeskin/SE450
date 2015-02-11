@@ -1,6 +1,6 @@
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * The implementation class of the basic elevator.
@@ -18,6 +18,7 @@ public class ElevatorImpl implements Runnable, Elevator {
     private int currentFloor;
     private boolean active;
     private boolean inUse;
+    private Request currentRequest;
     private int destination;
     private ArrayList<Request> requests = new ArrayList<Request>();
     private ArrayList<Integer> floorCalls = new ArrayList<Integer>();
@@ -34,20 +35,44 @@ public class ElevatorImpl implements Runnable, Elevator {
 
         while (active) {
             // if there are no request - wait for a new one.
-            if(requests.isEmpty()){
+            if (requests.isEmpty()) {
                 synchronized (requests) {
                     try {
+                        System.out.printf("Elevator %d has no requests and is waiting for input.\n",
+                                elevatorID);
                         requests.wait();
+                        System.out.printf("Elevator %d is no longer waiting\n", elevatorID);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
+                        continue;
                     }
                 }
+                // take a Request from a queue and process it
+                processRequest();
             }
+        }
+    }
 
+    /*
+     * A method to process a request to go to a floor. This is a queue of sanitized
+     * requests that our Elevator controller has sent to the Elevator and it has accepted
+     * and is operating on currently. If the request queue is not empty, the elevator should
+     * be operating on the requests.
+     */
+    private void processRequest () {
 
-            // when there are active requests - handle the requests
+        boolean active = true;
 
-
+        while (active) {
+            // if there are requests
+            synchronized (requests) {
+                if (!requests.isEmpty ()) {
+                    currentRequest = requests.remove(0);
+                } else {
+                    active = false;
+                    continue;
+            }
+    }
 
             //if()
             /*
