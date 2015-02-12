@@ -7,10 +7,11 @@
  */
 public interface Elevator extends Runnable {
 
-    enum Direction {UP, DOWN, IDLE}
     Direction getDirection();
     int getElevatorID();
-    void pushButton(int floorNumber);
-    void call(int floorNumber);
+    int getCurrentFloor();
+    void pushButton(Request request);
+    void call(Request request);
+    void shutDown();
 
 }

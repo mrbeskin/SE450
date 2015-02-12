@@ -7,9 +7,9 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ElevatorFactory {
 
-    public static Elevator build(int elevatorID, CountDownLatch startSignal, CountDownLatch doneSignal){
+    public static Elevator build(int elevatorID){
 
-        return new ElevatorImpl(elevatorID, 1, startSignal, doneSignal);
+        return new ElevatorImpl(elevatorID, 1);
 
     }
 

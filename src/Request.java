@@ -6,7 +6,6 @@
  */
 public class Request implements Comparable<Request> {
 
-    private enum Direction { UP, DOWN }
     private Direction direction;
 
     private int currentFloor;
