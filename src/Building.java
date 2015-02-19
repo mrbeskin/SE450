@@ -15,7 +15,7 @@ public final class Building {
 
     private static Building instance = new Building();
 
-    public static Building getInstance() throws Exception {
+    public static Building getInstance(){
         return instance;
     }
 
@@ -41,6 +41,17 @@ public final class Building {
         if (elevators == null){
             elevators = numElevators;
         }
+    }
+
+
+    /*
+    public Person createPerson(){
+
+        new Person;
+    }
+    */
+    public void putOnFloor(){
+
     }
 
     // will start a new ElevatorController in final implementation

@@ -10,8 +10,8 @@ public interface Elevator extends Runnable {
     Direction getDirection();
     int getElevatorID();
     int getCurrentFloor();
-    void pushButton(Request request);
-    void call(Request request);
+    void pushButton(int floor);
+    void call(int floor);
     void shutDown();
 
 }
