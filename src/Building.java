@@ -32,8 +32,8 @@ public final class Building {
             floors = numFloors;
             floorList = new ArrayList<Floor>();
         }
-        for (int i = 0; i < numFloors; i++) {
-            floorList.add(new Floor(i + 1));
+        for (int i = 0; i <= numFloors; i++) {
+            floorList.add(new Floor(i));
         }
     }
 
@@ -50,8 +50,18 @@ public final class Building {
         new Person;
     }
     */
-    public void putOnFloor(){
+    public void putOnFloor(int i, Person person){
+        synchronized (floorList) {
+            floorList.get(i).addPerson(person);
+        }
+    }
 
+    public void whoIsOnFloor(){
+        if (!floorList.isEmpty()) {
+            for (int i = 0; i < floorList.size(); i++){
+                floorList.get(i).whoIsOnFloor();
+            }
+        }
     }
 
     // will start a new ElevatorController in final implementation

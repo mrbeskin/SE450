@@ -8,7 +8,7 @@ public class Floor {
     private int floorID;
     private boolean upPressed;
     private boolean downPressed;
-    private volatile ArrayList<Person> personQueue;
+    private volatile ArrayList<Person> personQueue = new ArrayList<Person>();
 
 
     public Floor(int floorNumber){
@@ -20,6 +20,12 @@ public class Floor {
         return floorID;
     }
 
+    public void addPerson(Person person){
+        synchronized (personQueue) {
+            personQueue.add(person);
+        }
+    }
+
     public void elevatorArrival(int elevatorID){
 
         synchronized(personQueue){
@@ -27,6 +33,12 @@ public class Floor {
 
         }
 
+    }
+
+    public void whoIsOnFloor() {
+        for (int i = 0; i < personQueue.size(); i++){
+            System.out.printf("Person %d reporting in! I'm on floor %d \n", personQueue.get(i).getId(), floorID);
+        }
     }
 
 

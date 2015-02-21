@@ -8,11 +8,11 @@ public class Request implements Comparable<Request> {
 
     private Direction direction;
 
-    private int currentFloor;
+    private int startFloor;
     private int targetFloor;
 
     public Request(int currentFloor, int targetFloor) {
-        this.currentFloor = currentFloor;
+        this.startFloor = currentFloor;
         this.targetFloor = targetFloor;
         if(targetFloor > currentFloor){
             direction = Direction.UP;
@@ -26,8 +26,8 @@ public class Request implements Comparable<Request> {
         return direction;
     }
 
-    public int getCurrentFloor () {
-        return currentFloor;
+    public int getStartFloor () {
+        return startFloor;
     }
 
     public int getTargetFloor () {

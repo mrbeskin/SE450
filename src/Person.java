@@ -52,7 +52,8 @@ public class Person {
         destination = new Request(start, end);
     }
 
-    public Request getRequest(){
-        return destination;
-    }
+    public int getStartFloor() {return destination.getStartFloor(); }
+    public int getTargetFloor() {return destination.getTargetFloor(); }
+    public Direction getDesiredDirection() {return destination.getDirection(); }
+    public int getId() { return id; }
 }
