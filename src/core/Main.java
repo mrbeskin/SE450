@@ -98,6 +98,10 @@ public class Main {
 
     }
 
+    private static void createPeople(){
+
+    }
+
 
     public static void main(String args[]) {
         startTimer();
@@ -106,16 +110,18 @@ public class Main {
         Building.getInstance().setElevators(4);
         ElevatorController.getInstance().startElevators();
 
+    while(true) {
 
+        int i = 0;
         try {
-            Thread.sleep(500);
+            Thread.sleep(6000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        newPerson(i);
+        i++;
+    }
 
-        for(int i = 0; i < 5; i++){
-            newPerson(i);
-        }
     }
 /*
 

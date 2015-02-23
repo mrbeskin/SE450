@@ -44,6 +44,8 @@ public class ElevatorImpl implements Runnable, Elevator {
             synchronized (requests) {
                 if (requests.isEmpty() && !returning) {
                     if (currentFloor != homeFloor) {
+                        direction = Direction.IDLE;
+                        // TODO: if no more requests set returning to true.
                         returning = true;
                     }
                 }
@@ -58,7 +60,7 @@ public class ElevatorImpl implements Runnable, Elevator {
                         if (requests.isEmpty() && currentFloor != homeFloor) {
                             System.out.printf("%s Elevator %d has timed out and is returning home.\n",
                                     Main.currentTime(), elevatorID);
-                            addRequest(1); //TODO: make sure this doesn't break shit
+                            addRequest(1);
                         }
                     }
                 }
@@ -68,6 +70,7 @@ public class ElevatorImpl implements Runnable, Elevator {
                         if (requests.isEmpty()) {
                             System.out.printf("%s Elevator %d has no requests and is waiting for input.\n",
                                     Main.currentTime(), elevatorID);
+                                direction = Direction.IDLE;
                                 requests.wait();
                         }
                     }
@@ -203,6 +206,10 @@ public class ElevatorImpl implements Runnable, Elevator {
             System.out.printf("%s Elevator %d ignoring a(n) %s button press to floor %d %s\n",
                     Main.currentTime(), elevatorID, desiredDirection, floor, requestString(requests));
         }
+    }
+
+    private void requestNew(){
+        // request more from the elevator controller
     }
 
 
