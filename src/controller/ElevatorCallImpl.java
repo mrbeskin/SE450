@@ -3,7 +3,7 @@ package controller;
 import building.Building;
 import core.Direction;
 import elevator.Elevator;
-import person.Request;
+import Request.Request;
 
 import java.util.ArrayList;
 

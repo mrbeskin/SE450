@@ -2,7 +2,7 @@ package building;
 
 import controller.ElevatorController;
 import person.Person;
-import person.Request;
+import Request.Request;
 
 import java.util.ArrayList;
 

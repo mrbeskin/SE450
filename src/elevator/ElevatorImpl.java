@@ -1,495 +1,253 @@
-        package elevator;
+package elevator;
 
-        import building.Building;
-        import core.Direction;
-        import core.Main;
-        import exception.FloorOutOfBoundsException;
-        import person.Person;
+import Request.Request;
+import building.Building;
+import core.Direction;
+import core.Main;
+import exception.FloorOutOfBoundsException;
+import person.Person;
 
-        import java.util.ArrayList;
-        import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Collections;
 
-        /**
-         * The implementation class of the basic elevator.
-         *
-         * Created by michael on 2/8/15.
-         */
-        public class ElevatorImpl implements Runnable, Elevator {
-            private final int homeFloor = 1;
-            private final int occupancy = 10;
-            private final long travelTime = 500;
-            private final long doorTime = 250;
+/**
+ * The implementation class of the basic elevator.
+ *
+ * Created by michael on 2/8/15.
+ */
+public class ElevatorImpl implements Runnable, Elevator {
+    private final int homeFloor = 1;
+    private final int occupancy = 5;
+    private final long travelTime = 500;
+    private final long doorTime = 250;
 
-            private Direction direction = Direction.IDLE;
+    private Direction direction;
 
-            private boolean active;
+    private boolean active;
 
-            private int elevatorID;
-            private int currentFloor;
-            private boolean returning = false;
-            private int destination;
-            private boolean consuming;
+    private int elevatorID;
+    private int currentFloor;
+    private boolean returning = false;
 
-            private ArrayList<Integer> requests = new ArrayList<Integer>();
-            private ArrayList<Person> occupants = new ArrayList<Person>();
+    private boolean consuming;
 
-            public ElevatorImpl(int idNum, int startingFloor) {
-                elevatorID = idNum;
-                currentFloor = startingFloor;
-            }
+    private ArrayList<Request> riderRequests = new ArrayList<Request>();
+    private ArrayList<Request> floorRequests = new ArrayList<Request>();
+    private ArrayList<Person> occupants = new ArrayList<Person>();
 
-
-            public void run() {
-                active = true; // used to keep thread running
-                while (active) {
-                    // if there are no request - wait for a new one.
-                    synchronized (requests) {
-                        if (requests.isEmpty() && !returning) {
-                            if (currentFloor != homeFloor) {
-                                direction = Direction.IDLE;
-                                // TODO: if no more requests set returning to true.
-                                returning = true;
-                            }
-                        }
-                    }
-                    if (returning) {
-                        waitForTimeOut();
-                    }
-
-                    try {
-                        synchronized (requests) {
-                            if (requests.isEmpty()) {
-                                System.out.printf("%s Elevator %d has no requests and is waiting for input.\n",
-                                        Main.currentTime(), elevatorID);
-                                direction = Direction.IDLE;
-                                requests.wait();
-                            }
-                        }
-                    } catch (InterruptedException ex) {
-                        System.out.println(ex);
-                    }
-
-                    // take a person.Request from a queue and process it
-
-                    try {
-                        processRequest();
-                    } catch (FloorOutOfBoundsException e) {
-                        e.printStackTrace();
-                    }
-                }
-                }
+    public ElevatorImpl(int idNum, int startingFloor) {
+        elevatorID = idNum;
+        currentFloor = startingFloor;
+    }
 
 
-            /*
-             * A method to process a request to go to a floor. This is a queue of sanitized
-             * requests that our elevator.Elevator controller has sent to the elevator.Elevator and it has accepted
-             * and is operating on currently. If the request queue is not empty, the elevator should
-             * be operating on the requests.
-             */
-            private void processRequest() throws FloorOutOfBoundsException {
-                consuming = true;
+    /*
+     * The following methods are core methods
+     * to run the the thread
+     */
 
-                while (consuming) {
-                    // if there are requests
-                    synchronized (requests) {
-                        if (!requests.isEmpty()) {
-                            destination = requests.remove(0);
-                            if (destination > currentFloor) {
-                                direction = Direction.UP;
-                            } else {
-                                direction = Direction.DOWN;
-                            }
-                        } else {
-                            consuming = false;
-                            continue;
-                        }
-                    }
-                    while (currentFloor != destination) {
-                        move();
-                    }
-                    if (currentFloor == destination){
-                        if (!returning) {
-                            //arrive();
-                        } else {
-                            returning = false;
-                        }
-                    }
-                }
-            }
-
-
-            // make sure that request is added properly into Array List of destinations
-            public void addRequest(int r) {
-                synchronized (requests) {
-                    boolean flag = false;
-                    for (int i = 0; i < requests.size(); i++) {
-                        if (requests.get(i) == r) {
-                            flag = true;
-                        }
-                    }
-                    if (destination == r) {
-                        flag = true;
-                    }
-
-                    if (!flag) {
-                        requests.add(r);
-
-
-                        Collections.sort(requests);
-                        if (direction == Direction.DOWN) {
-                            Collections.reverse(requests);
-                        }
-                        if (destination != 0 && !requests.isEmpty()) {
-                            if (direction == Direction.UP) {
-                                synchronized (requests) {
-                                    if (destination > requests.get(0)) { // if first request is before destination
-                                        int temp = requests.get(0); // swap destinations
-                                        requests.set(0, destination);
-                                        destination = temp;
-                                    }
-                                }
-                            } else if (direction == Direction.DOWN) {
-                                if (destination < requests.get(0)) {
-                                    int temp = requests.get(0);
-                                    requests.set(0, destination);
-                                    destination = temp;
-                                }
-                            }
-                        }
-                        requests.notifyAll();
-                    }
-                }
-            }
-
-            public boolean isGoingTo(int floor){
-                for(int i = 0; i < requests.size(); i++){
-                    if(i == floor){
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            public boolean isConsuming() {
-                return consuming;
-            }
-
-            /*
-             * The method by which the elevator.Elevator accepts calls from the controller.
-             */
-            public void call(int request) {
-                synchronized (requests) {
-
-                    addRequest(request);
-                    System.out.printf("%s Elevator %d accepting call to floor %d %s\n",
-                            Main.currentTime(), elevatorID, request, requestString(requests));
-                }
-            }
-
-            /*
-             * Method called by person from within elevator.
-             */
-            public void pushButton(int floor) {
-                Direction desiredDirection;
-                if (floor > currentFloor) {
-                    desiredDirection = Direction.UP;
-                }
-                else if (floor < currentFloor) {
-                    desiredDirection = Direction.DOWN;
-                }
-                else {
-                    //TODO: clean this up.
-                    desiredDirection = Direction.UP;
-                    System.out.println("SHOULD NOT GET HERE");
-                }
-
-                synchronized (requests){
-                    if (requests.isEmpty() && (currentFloor == destination)){
-                        direction = Direction.IDLE;
-                    }
-                }
-                if ((desiredDirection == direction) ||
-                        (direction == Direction.IDLE)) {
-                    synchronized (requests) {
-                        addRequest(floor);
-                    }
-                    System.out.printf("%s Elevator %d accepting a(n) %s button press to floor %d %s\n",
-                            Main.currentTime(), elevatorID, desiredDirection, floor, requestString(requests));
+    // The main thread run
+    public void run() {
+        active = true;
+        while (active) {
+            // are there any rider or floor requests
+            synchronized (floorRequests) {
+                if (!riderRequests.isEmpty() || !floorRequests.isEmpty()) {
+                    consuming = true;
                 } else {
-                    System.out.printf("%s Elevator %d ignoring a(n) %s button press to floor %d %s\n",
-                            Main.currentTime(), elevatorID, desiredDirection, floor, requestString(requests));
+                    consuming = false;
                 }
             }
-
-            private void arrive(){
-                openDoor();
-
-                synchronized (requests) {
-                    for (int i = 0; i < occupants.size(); i++) {
-                        if (occupants.get(i).getTargetFloor() == currentFloor) {
-                            occupants.remove(i);
-                            i--;
-                        }
-                    }
-                }
-                ArrayList<Person> potentialRiders = Building.getInstance().getFloor(currentFloor).elevatorArrival();
-                for (int i = 0; i < potentialRiders.size(); i ++){
-                    if(occupants.size() < occupancy){
-                        if(//maybe direction == idle too?
-                                potentialRiders.get(i).getDesiredDirection() == direction){
-                            Person entering = potentialRiders.remove(i);
-                            i--;
-                            occupants.add(entering);
-                            pushButton(entering.getTargetFloor());
-                        }
-                    }
-                }
-
-                Building.getInstance().getFloor(currentFloor).elevatorDepart(potentialRiders);
-
-                if (currentFloor == destination && requests.isEmpty()){
-                    direction = Direction.IDLE;
-                }
-                closeDoor();
-                getMoreRequests();
+            // if there are, process requests
+            if (consuming == true) {
+                processRequests();
+                // else check if there are more requests
+            } else {
+                //TODO: check controller pending requests
             }
-
-            private void getMoreRequests(){
-                if (requests.isEmpty() && currentFloor == destination){
-                    System.out.println("WOULD GET MORE REQUESTS HERE");
+            // if there are no more requests set returning to true
+            synchronized (floorRequests) {
+                if(floorRequests.isEmpty() && riderRequests.isEmpty()) {
+                    returning = true;
                 }
             }
-
-            private void waitForTimeOut(){
+            // if returning is true wait for timeout or more requests
+            if (returning == true) {
                 try {
                     Thread.sleep(1500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if (requests.isEmpty()) {
-                    synchronized (requests) {
-                        if (requests.isEmpty() && currentFloor != homeFloor) {
-                            System.out.printf("%s Elevator %d has timed out and is returning home.\n",
-                                    Main.currentTime(), elevatorID);
-                            addRequest(1);
-                        }
-                    }
+            }
+            // if still no more requests
+            synchronized (floorRequests) {
+                if (riderRequests.isEmpty() && floorRequests.isEmpty()) {
+                    returning = true;
                 }
             }
 
-
-            private void reportFinalList() {
-
-            }
-
-            private void receive(){
-
-            }
-
-            private void requestNew(){
-                // request more from the elevator controller
-            }
-
-
-
-
-            // UTILITY BELOW
-
-
-            public int getElevatorID() {
-                return elevatorID;
-            }
-
-            public Direction getDirection() {
-                return direction;
-            }
-
-            public int getCurrentFloor() {
-                return currentFloor;
-            }
-
-            private String requestString(ArrayList requests){
-                String returnString = "[Fulfilling requests: ";
-                if (destination > 0){
-                    returnString = returnString + destination + " ";
-                }
-                for(int i = 0; i < requests.size(); i ++){
-                    returnString = returnString + requests.get(i) + " ";
-                }
-                returnString = returnString + "]";
-                return returnString;
-            }
-
-            private void move() throws FloorOutOfBoundsException{
-                int departed = currentFloor; // for reporting
-                try {
-                    Thread.sleep(travelTime); // move
-                } catch (InterruptedException e) {
-                    System.out.printf("Elevator %d move interrupted.\n", elevatorID);
-                }
-                if (direction == Direction.UP) {
-                    currentFloor++;
-                    if (currentFloor > Building.getInstance().getNumFloors()){
-                        throw new FloorOutOfBoundsException("Elevator went above the building.");
-                    }
-                } else if (direction == Direction.DOWN) {
-                    currentFloor--;
-                    if (currentFloor <= 0){
-                        throw new FloorOutOfBoundsException("Elevator went below the building");
-                    }
-                }
-                System.out.printf("%s Elevator %d moved from floor %d to floor %d %s\n",
-                        Main.currentTime(), elevatorID, departed, currentFloor, requestString(requests));
-                if (currentFloor == destination){
-                    arrive();
-                }
-            }
-
-            private void openDoor() {
-                try {
-                    Thread.sleep(doorTime);
-                } catch (InterruptedException e) {
-                    System.out.printf("Elevator %d door open interrupted.\n", elevatorID);
-                }
-                System.out.printf("%s Elevator %d doors open on floor %d\n",
-                        Main.currentTime(), elevatorID, currentFloor);
-
-            }
-
-            private void closeDoor() {
-                try {
-                    Thread.sleep(doorTime);
-                } catch (InterruptedException e) {
-                    System.out.println("Elevator %d door close interrupted.\n");
-                }
-                System.out.printf("%s Elevator %d doors closed on floor %d\n",
-                        Main.currentTime(), elevatorID, currentFloor);
-            }
-
-            public void shutDown() {
-                synchronized (requests) {
-                    active = false;
-                    System.out.printf ("%s " +
-                                    "Elevator %d shutting down.\n",
-                            Main.currentTime(), elevatorID);
-                    requests.notifyAll();
-                }
-            }
-
-
-        }
-        /*
-
-            public void pushButton(int floor) {
-                core.Direction desiredDirection;
-                if (floor > currentFloor) {
-                    desiredDirection = core.Direction.UP;
-                }
-                else if (floor < currentFloor) {
-                    desiredDirection = core.Direction.DOWN;
-                }
-                else desiredDirection = core.Direction.UP;
-
-                person.Request request = new person.Request(currentFloor, floor);
-                synchronized (requests){
-                    if (requests.isEmpty() && (currentFloor == destination)){
-                        direction = core.Direction.IDLE;
-                    }
-                }
-                    if ((desiredDirection == direction) ||
-                            (direction == core.Direction.IDLE)) {
-                        addRequest(request);
-                        System.out.printf("%s elevator.Elevator %d accepting a(n) %s button press to floor %d %s\n",
-                                core.Main.currentTime(), elevatorID, desiredDirection, request.getTargetFloor(), requestString(requests));
-                    } else {
-                        System.out.printf("%s elevator.Elevator %d ignoring a(n) %s button press to floor %d %s\n",
-                                core.Main.currentTime(), elevatorID, desiredDirection, request.getTargetFloor(), requestString(requests));
-                    }
-            }
-
-            private void returnHome(){
-                person.Request goHome = new person.Request(this.getCurrentFloor(), 1);
-                synchronized (requests) {
-                    currentRequest = null;
-                    addRequest(goHome);
-                }
-            }
-
-            public void call(person.Request request) {
-                System.out.printf ("%s elevator.Elevator %d accepted call to floor %d %s\n",core.Main.currentTime(), elevatorID, request.getTargetFloor(), requestString(requests));
-                addRequest(request);
-            }
-
-            public int getElevatorID() {
-                return elevatorID;
-            }
-
-            public core.Direction getDirection() {
-                return direction;
-            }
-
-            public int getCurrentFloor() {
-                return currentFloor;
-            }
-
-            /*
-             * Create a string to represent requests that elevator is currently fulfilling
-
-            private String requestString(ArrayList requests){
-                String returnString = "[Fulfilling requests: ";
-                if (destination > 0){
-                    returnString = returnString + destination + " ";
-                }
-                for(int i = 0; i < requests.size(); i ++){
-                    person.Request request;
-                    request = (person.Request) requests.get(i);
-                    returnString = returnString + request.getTargetFloor() + " ";
-                }
-                returnString = returnString + "]";
-                return returnString;
-            }
-
-            private void move() {
-                int departed = currentFloor; // for reporting
-                try {
-                    Thread.sleep(travelTime); // move
-                } catch (InterruptedException e) {
-                    System.out.printf("elevator.Elevator %d move interrupted.\n", elevatorID);
-                }
-                if (direction == core.Direction.UP) {
-                    currentFloor++;
-                } else if (direction == core.Direction.DOWN) {
-                    currentFloor--;
-                }
-                System.out.printf("%s elevator.Elevator %d moved from floor %d to floor %d %s\n",core.Main.currentTime(), elevatorID, departed, currentFloor, requestString(requests));
-            }
-
-            private void openDoor() {
-                try {
-                    Thread.sleep(doorTime);
-                } catch (InterruptedException e) {
-                    System.out.printf("elevator.Elevator %d door open interrupted.\n", elevatorID);
-                }
-                System.out.printf("%s elevator.Elevator %d doors open on floor %d\n",core.Main.currentTime(), elevatorID, currentFloor);
-
-            }
-
-            private void closeDoor() {
-                try {
-                    Thread.sleep(doorTime);
-                } catch (InterruptedException e) {
-                    System.out.println("elevator.Elevator %d door close interrupted.\n");
-                }
-                System.out.printf("%s elevator.Elevator %d doors closed on floor %d\n",core.Main.currentTime(), elevatorID, currentFloor);
-            }
-
-            public void shutDown() {
-                synchronized (requests) {
-                    active = false;
-                    System.out.printf ("%s elevator.Elevator %d shutting down.\n",core.Main.currentTime(), elevatorID);
-                    requests.notifyAll();
+            if (returning == true){
+                if (currentFloor != homeFloor) {
+                    //TODO: call to home floor
                 }
             }
         }
+    }
 
-        */
+    private void processRequests() {
+        while (consuming) {
+            if (direction == Direction.IDLE) {
+                synchronized (floorRequests){
+                    setDirection();
+                }
+            } else if (onRequestedFloor()) {
+                //TODO: arrive();
+            } else {
+                try {
+                    move();
+                } catch (FloorOutOfBoundsException flex) {
+                    System.out.print(flex);
+                }
+            }
+        }
+    }
+
+    /*
+     * The following methods define movement
+     * and arrival.
+     */
+
+    // Move to next floor according to direction
+    public void move() throws FloorOutOfBoundsException{
+        int departed = currentFloor;
+        try {
+            Thread.sleep(travelTime); // move
+        } catch (InterruptedException e) {
+            System.out.printf("Elevator %d move interrupted.\n", elevatorID);
+        }
+        if (direction == Direction.UP) {
+            currentFloor++;
+            if (currentFloor > Building.getInstance().getNumFloors()){
+                throw new FloorOutOfBoundsException("Elevator went above the building.");
+            }
+        } else if (direction == Direction.DOWN) {
+            currentFloor--;
+            if (currentFloor <= 0){
+                throw new FloorOutOfBoundsException("Elevator went below the building");
+            }
+        }
+        System.out.printf("%s Elevator %d moved from floor %d to floor %d %s\n",
+                Main.currentTime(), elevatorID, departed, currentFloor, requestString());
+    }
+
+    // arrive at a floor. The only method that should allow removal of a request.
+    public void arrive(){
+        openDoor();
+        
+    }
+
+    /*
+     * The following methods are for setting the direction of travel
+     * and abstracting binary travel questions
+     */
+    private void setDirection(){
+        synchronized (floorRequests) {
+            if (!floorRequests.isEmpty() && !riderRequests.isEmpty()) {
+                int floor = Math.abs(currentFloor - floorRequests.get(0).getTargetFloor());
+                int rider = Math.abs(currentFloor - riderRequests.get(0).getTargetFloor());
+                if (floor > rider){
+                    direction = riderRequests.get(0).getDirection();
+                } else {
+                    goToFloorRequest(floorRequests.get(0));
+                }
+            }
+            else if (floorRequests.isEmpty()){
+                direction = riderRequests.get(0).getDirection();
+            } else {
+                goToFloorRequest(floorRequests.get(0));
+            }
+        }
+    }
+    // set direction to direction of floor request
+    private void goToFloorRequest(Request request) {
+        if (floorRequests.get(0).getTargetFloor() > currentFloor) {
+            direction = Direction.UP;
+        } else {
+            direction = Direction.DOWN;
+        }
+    }
+
+    // to check if there needs to be an arrival
+    private boolean onRequestedFloor(){
+        if (!riderRequests.isEmpty()){
+            if (riderRequests.get(0).getTargetFloor() == currentFloor){
+                return true;
+            }
+        } else if(!floorRequests.isEmpty()){
+            if (floorRequests.get(0).getTargetFloor() == currentFloor){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /*
+     * Methods for Opening door, closing door and shutting down
+     * Very simple and should not need much work.
+     */
+
+    private void openDoor() {
+        try {
+            Thread.sleep(doorTime);
+        } catch (InterruptedException e) {
+            System.out.printf("Elevator %d door open interrupted.\n", elevatorID);
+        }
+        System.out.printf("%s Elevator %d doors open on floor %d\n",
+                Main.currentTime(), elevatorID, currentFloor);
+    }
+
+    private void closeDoor() {
+        try {
+            Thread.sleep(doorTime);
+        } catch (InterruptedException e) {
+            System.out.println("Elevator %d door close interrupted.\n");
+        }
+        System.out.printf("%s Elevator %d doors closed on floor %d\n",
+                Main.currentTime(), elevatorID, currentFloor);
+    }
+
+    public void shutDown() {
+        synchronized (floorRequests) {
+            active = false;
+            System.out.printf ("%s " +
+                            "Elevator %d shutting down.\n",
+                    Main.currentTime(), elevatorID);
+            floorRequests.notifyAll();
+        }
+    }
+
+    /*
+     * string building method for real time reports
+     */
+    private String requestString(){
+        String floorString = "[Floor Requests: ";
+        String riderString = "[Rider Requests: ";
+        String returnString;
+
+        if(!floorRequests.isEmpty()) {
+            for (int i = 0; i < floorRequests.size(); i++){
+                floorString = floorString + floorRequests.get(i) + " ";
+            }
+        }
+        if (!riderRequests.isEmpty()){
+            for(int i = 0; i < riderRequests.size(); i ++){
+                riderString = riderString + riderRequests.get(i) + " ";
+            }
+        }
+        returnString = floorString + riderString;
+        return returnString;
+    }
+
+
+
+}

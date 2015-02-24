@@ -3,7 +3,6 @@ package core;
 import building.Building;
 import controller.*;
 import person.Person;
-import person.Request;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -145,7 +144,7 @@ TEST ELEVATORS
         elevator2.start();
         elevator.start();
 
-        //test.call(new person.Request(1, 15));
+        //test.call(new Request.Request(1, 15));
 
         try {
             Thread.sleep(1000);

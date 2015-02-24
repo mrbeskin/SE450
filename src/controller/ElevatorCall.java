@@ -1,7 +1,7 @@
 package controller;
 
 import elevator.Elevator;
-import person.Request;
+import Request.Request;
 
 import java.util.ArrayList;
 
