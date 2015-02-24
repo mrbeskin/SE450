@@ -48,6 +48,10 @@ public final class Building {
         }
     }
 
+    public Floor getFloor(int floorID){
+        return floorList.get(floorID);
+    }
+
 
     /*
     public person.Person createPerson(){

@@ -19,7 +19,6 @@ public class Floor {
 
     public Floor(int floorNumber){
         floorID = floorNumber;
-
     }
 
     public int getID(){
@@ -38,13 +37,18 @@ public class Floor {
         ElevatorController.getInstance().sendNewCall(request);
     }
 
-    public void elevatorArrival(int elevatorID){
+    public ArrayList<Person> elevatorArrival(){
 
         synchronized(personQueue){
-
-
+            return personQueue;
         }
 
+    }
+
+    public void elevatorDepart(ArrayList<Person> remaining){
+        synchronized(personQueue){
+            personQueue = remaining;
+        }
     }
 
     public void whoIsOnFloor() {

@@ -49,10 +49,6 @@ public class Main {
         Date milliTime = new Date(currentTime);
         DateFormat dateFormat = new SimpleDateFormat(":mm:ss.SSS");
         String formattedDate = dateFormat.format(milliTime);
-
-
-        System.out.println(hourString + formattedDate);
-
         return hourString + formattedDate.toString();
     }
 
@@ -114,7 +110,7 @@ public class Main {
 
         int i = 0;
         try {
-            Thread.sleep(6000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

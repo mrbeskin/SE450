@@ -56,12 +56,14 @@ public class ElevatorController {
     }
 
     public void sendNewCall(Request request) {
-        System.out.printf("Got the call from floor %d to floor %d!\n", request.getStartFloor(), request.getTargetFloor());
-            if(callAlgorithm.processCall(request, elevatorArray)){
+        synchronized (elevatorArray) {
+            System.out.printf("Got the call from floor %d to floor %d!\n", request.getStartFloor(), request.getTargetFloor());
+            if (callAlgorithm.processCall(request, elevatorArray)) {
                 System.out.println("Success!");
             } else {
                 addToPending(request);
             }
+        }
 
     }
 
