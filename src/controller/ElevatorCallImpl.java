@@ -15,6 +15,13 @@ import java.util.ArrayList;
  */
 public class ElevatorCallImpl implements ElevatorCall {
 
+    public boolean processCall(Request request, ArrayList<Elevator> elevatorList) {
+        return true;
+    }
+
+
+    /*
+
     private Request request;
 
 
@@ -89,7 +96,8 @@ public class ElevatorCallImpl implements ElevatorCall {
         } else {
             return false;
         }
-    }
+        */
+
 
     // Is the elevator going to the riders floor number request?
 

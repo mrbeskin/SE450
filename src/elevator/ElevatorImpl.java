@@ -60,6 +60,7 @@ public class ElevatorImpl implements Runnable, Elevator {
             }
             // if there are, process requests
             if (consuming == true) {
+                System.out.println("Processing requests"); //TODO: remove
                 processRequests();
                 // else check if there are more requests
             } else {
@@ -73,22 +74,41 @@ public class ElevatorImpl implements Runnable, Elevator {
             }
             // if returning is true wait for timeout or more requests
             if (returning == true) {
-                try {
-                    Thread.sleep(1500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                if (currentFloor != homeFloor) {
+                    try {
+                        System.out.println("I'm sleeping"); //TODO: remove
+                        Thread.sleep(1500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else {
+                    try {
+                    synchronized (floorRequests) {
+                        if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
+                            System.out.printf("%s Elevator %d has no requests and is waiting for input.\n",
+                                    Main.currentTime(), elevatorID);
+                            direction = Direction.IDLE;
+                            floorRequests.wait();
+                        }
+                    }
+                } catch (InterruptedException ex) {
+                    System.out.println(ex);
+                }
                 }
             }
             // if still no more requests
             synchronized (floorRequests) {
                 if (riderRequests.isEmpty() && floorRequests.isEmpty()) {
                     returning = true;
+                    System.out.println("RETURNING CONDITION REACHED"); //TODO: remove
                 }
             }
 
             if (returning == true){
                 if (currentFloor != homeFloor) {
-                    //TODO: call to home floor
+                    addCallRequest(new Request(currentFloor, 1));
+                    System.out.println("going home"); //TODO: remove
                 }
             }
         }
@@ -99,15 +119,19 @@ public class ElevatorImpl implements Runnable, Elevator {
             if (direction == Direction.IDLE) {
                 synchronized (floorRequests){
                     setDirection();
+                    System.out.println(direction);
                 }
             } else if (onRequestedFloor()) {
-                //TODO: arrive();
+                arrive();
             } else {
                 try {
                     move();
                 } catch (FloorOutOfBoundsException flex) {
                     System.out.print(flex);
                 }
+            }
+            if (floorRequests.isEmpty() && riderRequests.isEmpty()){
+                consuming = false;
             }
         }
     }
@@ -128,12 +152,12 @@ public class ElevatorImpl implements Runnable, Elevator {
         if (direction == Direction.UP) {
             currentFloor++;
             if (currentFloor > Building.getInstance().getNumFloors()){
-                throw new FloorOutOfBoundsException("Elevator went above the building.");
+                throw new FloorOutOfBoundsException("Elevator went above the building.\n");
             }
         } else if (direction == Direction.DOWN) {
             currentFloor--;
             if (currentFloor <= 0){
-                throw new FloorOutOfBoundsException("Elevator went below the building");
+                throw new FloorOutOfBoundsException("Elevator went below the building.\n");
             }
         }
         System.out.printf("%s Elevator %d moved from floor %d to floor %d %s\n",
@@ -143,8 +167,58 @@ public class ElevatorImpl implements Runnable, Elevator {
     // arrive at a floor. The only method that should allow removal of a request.
     public void arrive(){
         openDoor();
-        
+        getOff();
+        removeRequests(); // remove the requests for this floor
+        getRiders();
+        closeDoor();
+
+
+        synchronized (floorRequests) {
+            if (floorRequests.isEmpty() && riderRequests.isEmpty()){
+                direction = Direction.IDLE;
+            }
+        }
     }
+    /*
+     * The following methods pertain to the only two ways an elevator receives a request:
+     * a rider pushing a button or the controller calling it to a floor.
+     */
+
+    public void pushButton(Request request) {
+        if (request.getDirection() == direction){
+            addButtonRequest(request);
+            System.out.printf("%s Elevator %d accepting a(n) %s request to floor %d %s\n",
+                    Main.currentTime(), elevatorID, request.getDirection(), request.getTargetFloor(), requestString());
+        } else {
+            System.out.printf("%s Elevator %d ignoring a(n) %s request on floor %d %s\n",
+                    Main.currentTime(), elevatorID, request.getDirection(), currentFloor, requestString());
+        }
+    }
+
+    public void call(Request request) {
+        System.out.printf("%s Elevator %d responding to a call to floor %d %s\n",
+                Main.currentTime(), elevatorID, request.getTargetFloor(), requestString());
+        addCallRequest(request);
+        direction = request.getDirection();
+    }
+
+    public void addCallRequest(Request r) {
+        synchronized (floorRequests) {
+            floorRequests.add(r);
+            requestSort();
+            floorRequests.notifyAll();
+        }
+    }
+
+    public void addButtonRequest(Request r){
+        synchronized (floorRequests) {
+            riderRequests.add(r);
+            requestSort();
+            floorRequests.notifyAll();
+        }
+    }
+
+    // add request methods called when request is decided to be sanitary
 
     /*
      * The following methods are for setting the direction of travel
@@ -161,13 +235,21 @@ public class ElevatorImpl implements Runnable, Elevator {
                     goToFloorRequest(floorRequests.get(0));
                 }
             }
-            else if (floorRequests.isEmpty()){
-                direction = riderRequests.get(0).getDirection();
-            } else {
-                goToFloorRequest(floorRequests.get(0));
+
+            if (floorRequests.isEmpty() && !riderRequests.isEmpty()){
+                    direction = riderRequests.get(0).getDirection();
+                }
+            }
+
+            if (riderRequests.isEmpty() && !floorRequests.isEmpty()){
+                if (floorRequests.get(0).getTargetFloor() < currentFloor) {
+                    direction = Direction.DOWN;
+                } else {
+                    direction = Direction.UP;
+                }
             }
         }
-    }
+
     // set direction to direction of floor request
     private void goToFloorRequest(Request request) {
         if (floorRequests.get(0).getTargetFloor() > currentFloor) {
@@ -179,13 +261,14 @@ public class ElevatorImpl implements Runnable, Elevator {
 
     // to check if there needs to be an arrival
     private boolean onRequestedFloor(){
-        if (!riderRequests.isEmpty()){
-            if (riderRequests.get(0).getTargetFloor() == currentFloor){
+        if (!riderRequests.isEmpty()) {
+            if (riderRequests.get(0).getTargetFloor() == currentFloor) {
                 return true;
             }
-        } else if(!floorRequests.isEmpty()){
-            if (floorRequests.get(0).getTargetFloor() == currentFloor){
-                return true;
+        }
+            if(!floorRequests.isEmpty()){
+                if (floorRequests.get(0).getTargetFloor() == currentFloor){
+                    return true;
             }
         }
         return false;
@@ -227,6 +310,87 @@ public class ElevatorImpl implements Runnable, Elevator {
     }
 
     /*
+     * methods for interacting with the floor
+     */
+
+    // get off, get on, request floors, depart
+    public void getOff() {
+
+        // remove any people who have arrived
+        for (int i = 0; i < occupants.size(); i++) {
+            if (occupants.get(i).getTargetFloor() == currentFloor) {
+                occupants.remove(i);
+                i--;
+            }
+        }
+
+    }
+
+    /*
+     * Methods for removing and adding from the request queues
+     */
+
+    private void removeRequests(){
+        synchronized (floorRequests) {
+            if (!floorRequests.isEmpty()) {
+                if (currentFloor == floorRequests.get(0).getTargetFloor()) {
+                    floorRequests.remove(0);
+                }
+            }
+        }
+        synchronized (riderRequests) {
+            if(!riderRequests.isEmpty()) {
+                if (currentFloor == riderRequests.get(0).getTargetFloor()) {
+                    riderRequests.remove(0);
+                }
+            }
+        }
+    }
+
+    private void getRiders() {
+        // array list of people waiting on floor
+        ArrayList<Person> potentialRiders = Building.getInstance().getFloor(currentFloor).elevatorArrival();
+        // if no requests left, let a person on
+        if(riderRequests.isEmpty() && floorRequests.isEmpty() && !potentialRiders.isEmpty()){
+            Person first = potentialRiders.remove(0);
+            direction = first.getDesiredDirection();
+            pushButton(new Request(first.getStartFloor(), first.getTargetFloor()));
+        }
+
+        for (int i = 0; i < potentialRiders.size(); i++){
+            if (occupants.size() < occupancy){
+                if(potentialRiders.get(i).getDesiredDirection() == direction){
+                    Person newOccupant = potentialRiders.remove(i);
+                    occupants.add(newOccupant);
+                    pushButton(new Request(newOccupant.getStartFloor(), newOccupant.getTargetFloor()));
+                    i--;
+                }
+            }
+        }
+    }
+
+    private void requestSort() {
+        synchronized (floorRequests) {
+            if (direction == Direction.UP) {
+                Collections.sort(floorRequests);
+            }
+            if (direction == Direction.DOWN) {
+                Collections.sort(floorRequests);
+                Collections.reverse(floorRequests);
+            }
+        }
+        synchronized (riderRequests){
+            if (direction == Direction.UP) {
+                Collections.sort(riderRequests);
+            }
+            if (direction == Direction.DOWN) {
+                Collections.sort(riderRequests);
+                Collections.reverse(riderRequests);
+            }
+        }
+    }
+
+    /*
      * string building method for real time reports
      */
     private String requestString(){
@@ -236,18 +400,53 @@ public class ElevatorImpl implements Runnable, Elevator {
 
         if(!floorRequests.isEmpty()) {
             for (int i = 0; i < floorRequests.size(); i++){
-                floorString = floorString + floorRequests.get(i) + " ";
+                floorString = floorString + floorRequests.get(i).getTargetFloor() + " ";
             }
         }
         if (!riderRequests.isEmpty()){
             for(int i = 0; i < riderRequests.size(); i ++){
-                riderString = riderString + riderRequests.get(i) + " ";
+                riderString = riderString + riderRequests.get(i).getTargetFloor() + " ";
             }
         }
-        returnString = floorString + riderString;
+        returnString = floorString + "]" + riderString + "]";
         return returnString;
     }
 
+    /*
+     * gets
+     */
 
+    public int getElevatorID() {
+        return elevatorID;
+    }
 
+    public Direction getDirection() {
+        return direction;
+    }
+
+    public int getCurrentFloor() {
+        return currentFloor;
+    }
+
+    public boolean isConsuming() {
+        return consuming;
+    }
+
+    public boolean isGoingTo(int floor){
+        synchronized (floorRequests) {
+            for (int i = 0; i < floorRequests.size(); i++) {
+                if (floorRequests.get(i).getTargetFloor() == floor) {
+                    return true;
+                }
+            }
+        }
+        synchronized (riderRequests) {
+            for (int i = 0; i < riderRequests.size(); i++) {
+                if (riderRequests.get(i).getTargetFloor() == floor) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

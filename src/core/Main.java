@@ -2,13 +2,16 @@ package core;
 
 import building.Building;
 import controller.*;
+import elevator.Elevator;
+import elevator.ElevatorImpl;
 import person.Person;
+import Request.Request;
+
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
 /**
  * Created by michael on 2/18/15.
  */
@@ -102,9 +105,25 @@ public class Main {
         startTimer();
         startUp();
         Building.getInstance().setFloors(15);
+        /*
         Building.getInstance().setElevators(4);
         ElevatorController.getInstance().startElevators();
+*/
+        Elevator newguy = new ElevatorImpl(1, 1);
 
+        new Thread(newguy).start();
+
+        newguy.call(new Request(newguy.getCurrentFloor(), 4));
+        newguy.pushButton(new Request(4, 10));
+
+        Elevator boodguy = new ElevatorImpl(2, 1);
+
+        new Thread(boodguy).start();
+
+        boodguy.call(new Request(newguy.getCurrentFloor(), 15));
+        boodguy.pushButton(new Request(4, 10));
+
+/*
     while(true) {
 
         int i = 0;
@@ -116,7 +135,7 @@ public class Main {
         newPerson(i);
         i++;
     }
-
+*/
     }
 /*
 
