@@ -204,7 +204,15 @@ public class ElevatorImpl implements Runnable, Elevator {
 
     public void addCallRequest(Request r) {
         synchronized (floorRequests) {
-            floorRequests.add(r);
+            boolean alreadyThere = false;
+            for (int i = 0; i < floorRequests.size(); i ++){
+                if(floorRequests.get(i).getTargetFloor() == r.getTargetFloor()){
+                    alreadyThere = true;
+                }
+            }
+            if (!alreadyThere) {
+                floorRequests.add(r);
+            }
             requestSort();
             floorRequests.notifyAll();
         }
@@ -212,7 +220,15 @@ public class ElevatorImpl implements Runnable, Elevator {
 
     public void addButtonRequest(Request r){
         synchronized (floorRequests) {
-            riderRequests.add(r);
+            boolean alreadyThere = false;
+            for (int i = 0; i < riderRequests.size(); i ++){
+                if(riderRequests.get(i).getTargetFloor() == r.getTargetFloor()){
+                    alreadyThere = true;
+                }
+            }
+            if(!alreadyThere) {
+                riderRequests.add(r);
+            }
             requestSort();
             floorRequests.notifyAll();
         }

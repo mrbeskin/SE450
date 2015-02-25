@@ -123,6 +123,23 @@ public class Main {
         boodguy.call(new Request(newguy.getCurrentFloor(), 15));
         boodguy.pushButton(new Request(4, 10));
 
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        newguy.pushButton(new Request(4,10));
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        newguy.pushButton(new Request(4, 1));
+        newguy.call(new Request(4, 15));
+
 /*
     while(true) {
 
@@ -137,61 +154,4 @@ public class Main {
     }
 */
     }
-/*
-
-TEST PEOPLE
-
-        for (int i = 0; i < 1000000; i ++) {
-            person.Person person = new person.Person(i);
-            person.setRequest();
-            if (person.getRequest().getTargetFloor() == person.getRequest().getCurrentFloor() ||
-                    person.getRequest().getTargetFloor() > 15 || person.getRequest().getTargetFloor() < 1 ||
-                    person.getRequest().getCurrentFloor() > 15 || person.getRequest().getCurrentFloor() < 1){
-                System.out.println("oops");
-            }
-        }
-        System.out.println("done");
-
-
-
-
-TEST ELEVATORS
-        elevator.Elevator test = building.ElevatorFactory.build(1);
-        elevator.Elevator test2 = building.ElevatorFactory.build(2);
-        Thread elevator = new Thread(test);
-        Thread elevator2 = new Thread(test2);
-        elevator2.start();
-        elevator.start();
-
-        //test.call(new Request.Request(1, 15));
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        test.call(12);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        test.call(4);
-        test.call(6);
-        test.call(8);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        test2.pushButton(5);
-        test.pushButton(1);
-        try {
-            Thread.sleep(5500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        test.pushButton(5);
-    */
 }
