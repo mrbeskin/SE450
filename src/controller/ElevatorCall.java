@@ -14,7 +14,7 @@ import java.util.ArrayList;
  */
 public interface ElevatorCall {
 
-    public boolean processCall(Request request, ArrayList<Elevator> elevatorList);
+    public boolean processCall(Request request);
 
 
 }

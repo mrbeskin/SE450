@@ -429,6 +429,55 @@ public class ElevatorImpl implements Runnable, Elevator {
     }
 
     /*
+     * Methods to help get information for call algorithm
+     */
+
+    // to check if responding to a floor call
+    public boolean isFloorCall(){
+        if (direction == Direction.UP){
+            if(riderRequests.get(0).getTargetFloor() > floorRequests.get(0).getTargetFloor()){
+                return true;
+            }
+        }
+        if (direction == Direction.DOWN){
+            if(riderRequests.get(0).getTargetFloor() < floorRequests.get(0).getTargetFloor()){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int getCurrentDestination(){
+        if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
+            if(direction == Direction.UP) {
+                if (floorRequests.get(0).getTargetFloor() < riderRequests.get(0).getTargetFloor()) {
+                    return floorRequests.get(0).getTargetFloor();
+                } else {
+                    return riderRequests.get(0).getTargetFloor();
+                }
+            }
+
+            if (direction == Direction.DOWN){
+                if (floorRequests.get(0).getTargetFloor() > riderRequests.get(0).getTargetFloor()) {
+                    return floorRequests.get(0).getTargetFloor();
+                } else {
+                    return riderRequests.get(0).getTargetFloor();
+                }
+            }
+        }
+
+
+        if (floorRequests.isEmpty()) {
+            return riderRequests.get(0).getTargetFloor();
+        }
+        if(riderRequests.isEmpty()){
+            return floorRequests.get(0).getTargetFloor();
+        }
+        return(-1);
+    }
+
+
+    /*
      * gets
      */
 

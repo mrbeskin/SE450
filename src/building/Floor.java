@@ -29,7 +29,6 @@ public class Floor {
         synchronized (personQueue) {
             personQueue.add(person);
             newCall(new Request(person.getStartFloor(), person.getTargetFloor()));
-
         }
     }
 

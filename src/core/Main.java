@@ -88,7 +88,7 @@ public class Main {
      * Used to start the simulation when all values are set.
      */
     private static void startUp() throws NullPointerException{
-        globalCallAlg = new ElevatorCallImpl();
+        globalCallAlg = new ElevatorCallImpl(ElevatorController.getInstance().getElevatorArray());
         globalPendingAlg = new ElevatorPendingImpl();
         setElevatorCallAlgorithm(globalCallAlg);
         setElevatorPendingAlgorithm(globalPendingAlg);
@@ -103,55 +103,25 @@ public class Main {
 
     public static void main(String args[]) {
         startTimer();
-        startUp();
         Building.getInstance().setFloors(15);
-        /*
+
         Building.getInstance().setElevators(4);
         ElevatorController.getInstance().startElevators();
-*/
-        Elevator newguy = new ElevatorImpl(1, 1);
 
-        new Thread(newguy).start();
+        startUp();
 
-        newguy.call(new Request(newguy.getCurrentFloor(), 4));
-        newguy.pushButton(new Request(4, 10));
 
-        Elevator boodguy = new ElevatorImpl(2, 1);
 
-        new Thread(boodguy).start();
+        while (true) {
 
-        boodguy.call(new Request(newguy.getCurrentFloor(), 15));
-        boodguy.pushButton(new Request(4, 10));
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            int i = 0;
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            newPerson(i);
+            i++;
         }
-
-        newguy.pushButton(new Request(4,10));
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        newguy.pushButton(new Request(4, 1));
-        newguy.call(new Request(4, 15));
-
-/*
-    while(true) {
-
-        int i = 0;
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        newPerson(i);
-        i++;
-    }
-*/
     }
 }

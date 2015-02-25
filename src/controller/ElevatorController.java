@@ -46,7 +46,7 @@ public class ElevatorController {
         }
     }
 
-    public void addToPending(Request request){
+    private void addToPending(Request request){
         synchronized (pendingRequests) {
             pendingRequests.add(request);
             Collections.sort(pendingRequests);
@@ -56,13 +56,16 @@ public class ElevatorController {
     public void sendNewCall(Request request) {
         synchronized (elevatorArray) {
             System.out.printf("Got the call from floor %d to floor %d!\n", request.getStartFloor(), request.getTargetFloor());
-            if (callAlgorithm.processCall(request, elevatorArray)) {
+            if (callAlgorithm.processCall(request)) {
                 System.out.println("Success!");
             } else {
                 addToPending(request);
             }
         }
+    }
 
+    public ArrayList<Elevator> getElevatorArray(){
+        return elevatorArray;
     }
 
 }

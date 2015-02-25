@@ -5,6 +5,6 @@ package controller;
  */
 public class ElevatorCallFactory {
     public ElevatorCall build() {
-        return new ElevatorCallImpl();
+        return new ElevatorCallImpl(ElevatorController.getInstance().getElevatorArray());
     }
 }
