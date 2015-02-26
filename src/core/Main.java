@@ -2,10 +2,11 @@ package core;
 
 import building.Building;
 import controller.*;
-import elevator.Elevator;
-import elevator.ElevatorImpl;
+import controller.callAlgorithms.ElevatorCall;
+import controller.callAlgorithms.ElevatorCallImpl;
+import controller.pendingAlgorithms.ElevatorPending;
+import controller.pendingAlgorithms.ElevatorPendingImpl;
 import person.Person;
-import Request.Request;
 
 
 import java.sql.Timestamp;
@@ -116,7 +117,7 @@ public class Main {
 
             int i = 0;
             try {
-                Thread.sleep(500);
+                Thread.sleep(250);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

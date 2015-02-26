@@ -2,7 +2,7 @@ package person; /**
  * Created by michael on 2/18/15.
  */
 
-import Request.Request;
+import request.Request;
 import building.Building;
 import core.Direction;
 

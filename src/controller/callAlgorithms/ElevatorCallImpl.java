@@ -1,9 +1,8 @@
-package controller;
+package controller.callAlgorithms;
 
-import building.Building;
 import core.Direction;
 import elevator.Elevator;
-import Request.Request;
+import request.Request;
 
 import java.util.ArrayList;
 
@@ -46,6 +45,9 @@ public class ElevatorCallImpl implements ElevatorCall {
     private boolean isElevatorOnFloor(Request currentRequest) {
 
             for (int i = 0; i < elevators.size(); i++) {
+                if (elevators.get(i).arrivedAlready()){
+                    return false;
+                }
                 // test all elevators to see if they are on the current floor
                 if (elevators.get(i).getCurrentFloor() == currentRequest.getTargetFloor()) {
                     // if they are see if they are going in the direction of the request
@@ -53,7 +55,8 @@ public class ElevatorCallImpl implements ElevatorCall {
                             currentRequest.getTargetFloor());
                     if (elevators.get(i).getDirection() == directionReq.getDirection() ||
                             elevators.get(i).getDirection() == Direction.IDLE) {
-                        elevators.get(i).call(currentRequest);
+                        elevators.get(i).call(new Request(elevators.get(i).getCurrentFloor(),
+                                currentRequest.getStartFloor()));
                         return true;
                     }
                 }
@@ -72,12 +75,14 @@ public class ElevatorCallImpl implements ElevatorCall {
                     elevators.get(i).getDirection() == Direction.DOWN) {
                 if (elevators.get(i).isFloorCall()) {
                     if (isMovingTowardsThisFloor(elevators.get(i), currentRequest)) {
-                        elevators.get(i).call(currentRequest);
+                        elevators.get(i).call(new Request(elevators.get(i).getCurrentFloor(),
+                                currentRequest.getStartFloor()));
                         return true;
                     }
                 } else {
                     if (isMovingTowardsThisFloor(elevators.get(i), currentRequest)) {
-                        elevators.get(i).call(currentRequest);
+                        elevators.get(i).call(new Request(elevators.get(i).getCurrentFloor(),
+                                currentRequest.getStartFloor()));
                         return true;
                     }
                 }
@@ -89,18 +94,18 @@ public class ElevatorCallImpl implements ElevatorCall {
 
 
     private boolean isMovingTowardsThisFloor(Elevator e, Request currentRequest) {
-        if (e.getCurrentFloor() < currentRequest.getTargetFloor() &&
+        if (e.getCurrentFloor() < currentRequest.getStartFloor() &&
                 e.getDirection() == Direction.UP) {
             if (currentRequest.getDirection() == Direction.UP) {
-                if (e.getCurrentDestination() >= currentRequest.getTargetFloor()) {
+                if (e.getCurrentDestination() >= currentRequest.getStartFloor()) {
                     return true;
                 }
             }
         }
-        if (e.getCurrentFloor() > currentRequest.getTargetFloor() &&
+        if (e.getCurrentFloor() > currentRequest.getStartFloor() &&
                 e.getDirection() == Direction.DOWN) {
             if (currentRequest.getDirection() == Direction.DOWN) {
-                if (e.getCurrentDestination() <= currentRequest.getTargetFloor()) {
+                if (e.getCurrentDestination() <= currentRequest.getStartFloor()) {
                     return true;
                 }
             }
@@ -115,7 +120,8 @@ public class ElevatorCallImpl implements ElevatorCall {
     private boolean isIdleAvailable(Request currentRequest) {
         for (int i = 0; i < elevators.size(); i++) {
             if (elevators.get(i).getDirection() == Direction.IDLE) {
-                elevators.get(i).call(currentRequest);
+                elevators.get(i).call(new Request(elevators.get(i).getCurrentFloor(),
+                        currentRequest.getStartFloor()));
                 return true;
             }
         }

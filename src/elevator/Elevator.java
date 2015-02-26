@@ -1,6 +1,6 @@
 package elevator;
 
-import Request.Request;
+import request.Request;
 import core.Direction;
 
 /**
@@ -17,6 +17,7 @@ public interface Elevator extends Runnable {
     boolean isGoingTo(int floor);
     boolean isConsuming();
     boolean isFloorCall();
+    boolean arrivedAlready();
     public int getCurrentDestination();
     void pushButton(Request request);
     void call(Request request);

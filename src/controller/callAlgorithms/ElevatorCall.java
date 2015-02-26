@@ -1,9 +1,6 @@
-package controller;
+package controller.callAlgorithms;
 
-import elevator.Elevator;
-import Request.Request;
-
-import java.util.ArrayList;
+import request.Request;
 
 /**
  * This interface describes the behavior of all algorithms

@@ -1,4 +1,6 @@
-package controller;
+package controller.pendingAlgorithms;
+
+import controller.pendingAlgorithms.ElevatorPending;
 
 /**
  * Created by michael on 2/20/15.

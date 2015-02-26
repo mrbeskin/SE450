@@ -1,9 +1,11 @@
 package controller;
 
 import building.Building;
+import controller.callAlgorithms.ElevatorCall;
+import controller.pendingAlgorithms.ElevatorPending;
 import elevator.Elevator;
 import elevator.ElevatorImpl;
-import Request.Request;
+import request.Request;
 
 import java.util.ArrayList;
 import java.util.Collections;

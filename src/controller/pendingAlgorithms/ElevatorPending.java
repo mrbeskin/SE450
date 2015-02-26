@@ -1,4 +1,4 @@
-package controller;
+package controller.pendingAlgorithms;
 
 /**
  * Created by michael on 2/20/15.

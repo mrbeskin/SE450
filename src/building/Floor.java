@@ -2,7 +2,7 @@ package building;
 
 import controller.ElevatorController;
 import person.Person;
-import Request.Request;
+import request.Request;
 
 import java.util.ArrayList;
 
@@ -47,6 +47,9 @@ public class Floor {
     public void elevatorDepart(ArrayList<Person> remaining){
         synchronized(personQueue){
             personQueue = remaining;
+            for (int i = 0; i < personQueue.size(); i ++){
+                newCall(new Request(personQueue.get(i).getStartFloor(), personQueue.get(i).getTargetFloor()));
+            }
         }
     }
 
