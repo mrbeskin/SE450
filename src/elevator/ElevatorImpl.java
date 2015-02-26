@@ -85,17 +85,17 @@ public class ElevatorImpl implements Runnable, Elevator {
                 }
                 else {
                     try {
-                    synchronized (floorRequests) {
-                        if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
-                            System.out.printf("%s Elevator %d has no requests and is waiting for input.\n",
-                                    Main.currentTime(), elevatorID);
-                            direction = Direction.IDLE;
-                            floorRequests.wait();
+                        synchronized (floorRequests) {
+                            if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
+                                System.out.printf("%s Elevator %d has no requests and is waiting for input.\n",
+                                        Main.currentTime(), elevatorID);
+                                direction = Direction.IDLE;
+                                floorRequests.wait();
+                            }
                         }
+                    } catch (InterruptedException ex) {
+                        System.out.println(ex);
                     }
-                } catch (InterruptedException ex) {
-                    System.out.println(ex);
-                }
                 }
             }
             // if still no more requests
@@ -174,6 +174,7 @@ public class ElevatorImpl implements Runnable, Elevator {
         openDoor();
         arrived = true;
         getOff();
+        System.out.println(occupants.size());
         removeRequests(); // remove the requests for this floor
         getRiders();
         closeDoor();
@@ -226,15 +227,15 @@ public class ElevatorImpl implements Runnable, Elevator {
 
     public void addButtonRequest(Request r){
         synchronized (floorRequests) {
-           // boolean alreadyThere = false;
+            // boolean alreadyThere = false;
             //for (int i = 0; i < riderRequests.size(); i ++){
-               // if(riderRequests.get(i).getTargetFloor() == r.getTargetFloor()){
-                //    alreadyThere = true;
-                //}
+            // if(riderRequests.get(i).getTargetFloor() == r.getTargetFloor()){
+            //    alreadyThere = true;
             //}
-           // if(!alreadyThere) {
-                riderRequests.add(r);
-           // }
+            //}
+            // if(!alreadyThere) {
+            riderRequests.add(r);
+            // }
             requestSort();
             floorRequests.notifyAll();
         }
@@ -259,18 +260,18 @@ public class ElevatorImpl implements Runnable, Elevator {
             }
 
             if (floorRequests.isEmpty() && !riderRequests.isEmpty()){
-                    direction = riderRequests.get(0).getDirection();
-                }
-            }
-
-            if (riderRequests.isEmpty() && !floorRequests.isEmpty()){
-                if (floorRequests.get(0).getTargetFloor() < currentFloor) {
-                    direction = Direction.DOWN;
-                } else {
-                    direction = Direction.UP;
-                }
+                direction = riderRequests.get(0).getDirection();
             }
         }
+
+        if (riderRequests.isEmpty() && !floorRequests.isEmpty()){
+            if (floorRequests.get(0).getTargetFloor() < currentFloor) {
+                direction = Direction.DOWN;
+            } else {
+                direction = Direction.UP;
+            }
+        }
+    }
 
     // set direction to direction of floor request
     private void goToFloorRequest(Request request) {
@@ -288,9 +289,9 @@ public class ElevatorImpl implements Runnable, Elevator {
                 return true;
             }
         }
-            if(!floorRequests.isEmpty()){
-                if (floorRequests.get(0).getTargetFloor() == currentFloor){
-                    return true;
+        if(!floorRequests.isEmpty()){
+            if (floorRequests.get(0).getTargetFloor() == currentFloor){
+                return true;
             }
         }
         return false;
@@ -375,7 +376,7 @@ public class ElevatorImpl implements Runnable, Elevator {
     private void getRiders() {
         // array list of people waiting on floor
         synchronized (Building.getInstance().getFloor(currentFloor)) {
-            ArrayList<Person> potentialRiders = new ArrayList<Person>();
+            ArrayList<Person> potentialRiders;
             potentialRiders = Building.getInstance().getFloor(currentFloor).elevatorArrival();
             // if no requests left, let a person on
             if (riderRequests.isEmpty() && floorRequests.isEmpty() && !potentialRiders.isEmpty()) {
@@ -385,10 +386,12 @@ public class ElevatorImpl implements Runnable, Elevator {
             }
 
             for (int i = 0; i < potentialRiders.size(); i++) {
+                System.out.println(occupants.size());
                 if (occupants.size() < occupancy) {
                     if (potentialRiders.get(i).getDesiredDirection() == direction) {
                         Person newOccupant = potentialRiders.remove(i);
                         occupants.add(newOccupant);
+                        System.out.println(occupants.size());
                         pushButton(new Request(newOccupant.getStartFloor(), newOccupant.getTargetFloor()));
                         i--;
                     }
@@ -428,8 +431,8 @@ public class ElevatorImpl implements Runnable, Elevator {
         String returnString;
 
         if(!floorRequests.isEmpty()) {
-            for (int i = 0; i < floorRequests.size(); i++){
-                floorString = floorString + floorRequests.get(i).getTargetFloor() + " ";
+            for (Request floorRequest : floorRequests) {
+                floorString = floorString + floorRequest.getTargetFloor() + " ";
             }
         }
         if (!riderRequests.isEmpty()){
