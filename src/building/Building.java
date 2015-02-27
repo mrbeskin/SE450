@@ -5,6 +5,7 @@ import elevator.Elevator;
 import person.Person;
 
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Singleton class that defines the floors and elevators
@@ -17,7 +18,7 @@ public final class Building {
 
     private Integer floors;
     private Integer elevators;
-    private ArrayList<Floor> floorList;
+    private CopyOnWriteArrayList<Floor> floorList;
     private static Building instance = new Building();
 
     public static Building getInstance(){
@@ -35,7 +36,7 @@ public final class Building {
     public void setFloors(int numFloors) {
         if (floors == null) {
             floors = numFloors;
-            floorList = new ArrayList<Floor>();
+            floorList = new CopyOnWriteArrayList<Floor>();
         }
         for (int i = 0; i <= numFloors; i++) {
             floorList.add(new Floor(i));

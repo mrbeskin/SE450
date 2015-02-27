@@ -9,6 +9,8 @@ import person.Person;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The implementation class of the basic elevator.
@@ -32,9 +34,9 @@ public class ElevatorImpl implements Runnable, Elevator {
 
     private boolean consuming;
 
-    private ArrayList<Request> riderRequests = new ArrayList<Request>();
-    private ArrayList<Request> floorRequests = new ArrayList<Request>();
-    private ArrayList<Person> occupants = new ArrayList<Person>();
+    private CopyOnWriteArrayList<Request> riderRequests = new CopyOnWriteArrayList<Request>();
+    private CopyOnWriteArrayList<Request> floorRequests = new CopyOnWriteArrayList<Request>();
+    private CopyOnWriteArrayList<Person> occupants = new CopyOnWriteArrayList<Person>();
 
     public ElevatorImpl(int idNum, int startingFloor) {
         elevatorID = idNum;
@@ -376,7 +378,7 @@ public class ElevatorImpl implements Runnable, Elevator {
     private void getRiders() {
         // array list of people waiting on floor
         synchronized (Building.getInstance().getFloor(currentFloor)) {
-            ArrayList<Person> potentialRiders;
+            CopyOnWriteArrayList<Person> potentialRiders;
             potentialRiders = Building.getInstance().getFloor(currentFloor).elevatorArrival();
             // if no requests left, let a person on
             if (riderRequests.isEmpty() && floorRequests.isEmpty() && !potentialRiders.isEmpty()) {
@@ -385,18 +387,8 @@ public class ElevatorImpl implements Runnable, Elevator {
                 pushButton(new Request(first.getStartFloor(), first.getTargetFloor()));
             }
 
-            for (int i = 0; i < potentialRiders.size(); i++) {
-                System.out.println(occupants.size());
-                if (occupants.size() < occupancy) {
-                    if (potentialRiders.get(i).getDesiredDirection() == direction) {
-                        Person newOccupant = potentialRiders.remove(i);
-                        occupants.add(newOccupant);
-                        System.out.println(occupants.size());
-                        pushButton(new Request(newOccupant.getStartFloor(), newOccupant.getTargetFloor()));
-                        i--;
-                    }
-                }
-            }
+            getIn(potentialRiders);
+
             Building.getInstance().getFloor(currentFloor).elevatorDepart(potentialRiders);
         }
     }
@@ -495,6 +487,24 @@ public class ElevatorImpl implements Runnable, Elevator {
             return floorRequests.get(0).getTargetFloor();
         }
         return(-1);
+    }
+
+    public void getIn(CopyOnWriteArrayList<Person> potentialRiders){
+        synchronized (occupants) {
+            CopyOnWriteArrayList<Person> tempOcc = occupants;
+            int room = occupancy - tempOcc.size();
+            Iterator<Person> itr = potentialRiders.iterator();
+            while (itr.hasNext() && room < occupancy) {
+                Person potentialOccupant = itr.next();
+                if (potentialOccupant.getDesiredDirection() == direction) {
+                    itr.remove();
+                    tempOcc.add(potentialOccupant);
+                    pushButton(new Request(potentialOccupant.getStartFloor(), potentialOccupant.getTargetFloor()));
+                    room++;
+                }
+            }
+            occupants = tempOcc;
+        }
     }
 
     /*

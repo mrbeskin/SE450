@@ -5,6 +5,7 @@ import person.Person;
 import request.Request;
 
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by michael on 2/8/15.
@@ -14,7 +15,7 @@ public class Floor {
     private int floorID;
     private boolean upPressed;
     private boolean downPressed;
-    private volatile ArrayList<Person> personQueue = new ArrayList<Person>();
+    private volatile CopyOnWriteArrayList<Person> personQueue = new CopyOnWriteArrayList<Person>();
 
 
     public Floor(int floorNumber){
@@ -36,7 +37,7 @@ public class Floor {
         ElevatorController.getInstance().sendNewCall(request);
     }
 
-    public ArrayList<Person> elevatorArrival(){
+    public CopyOnWriteArrayList<Person> elevatorArrival(){
 
         synchronized(personQueue){
             return personQueue;
@@ -44,7 +45,7 @@ public class Floor {
 
     }
 
-    public void elevatorDepart(ArrayList<Person> remaining){
+    public void elevatorDepart(CopyOnWriteArrayList<Person> remaining){
         synchronized(personQueue){
             personQueue = remaining;
             for (int i = 0; i < personQueue.size(); i ++){

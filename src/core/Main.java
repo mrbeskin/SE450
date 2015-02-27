@@ -117,7 +117,7 @@ public class Main {
 
             int i = 0;
             try {
-                Thread.sleep(250);
+                Thread.sleep(6000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
