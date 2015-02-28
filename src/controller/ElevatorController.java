@@ -9,6 +9,7 @@ import request.Request;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by michael on 2/18/15.
@@ -16,7 +17,7 @@ import java.util.Collections;
 public class ElevatorController {
     ElevatorCall callAlgorithm;
     ElevatorPending pendingAlgorithm;
-    ArrayList pendingRequests = new ArrayList<Request>();
+    CopyOnWriteArrayList pendingRequests = new CopyOnWriteArrayList<Request>();
     ArrayList elevatorArray;
 
     private static ElevatorController instance = new ElevatorController();
@@ -52,6 +53,14 @@ public class ElevatorController {
         synchronized (pendingRequests) {
             pendingRequests.add(request);
             Collections.sort(pendingRequests);
+        }
+    }
+
+    public void pendingResponse(int elevatorID){
+        synchronized (elevatorArray) {
+            if (pendingAlgorithm != null) {
+                pendingAlgorithm.sendRequests(pendingRequests, (Elevator) elevatorArray.get(elevatorID - 1));
+            }
         }
     }
 

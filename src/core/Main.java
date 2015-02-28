@@ -104,9 +104,9 @@ public class Main {
 
     public static void main(String args[]) {
         startTimer();
-        Building.getInstance().setFloors(15);
+        Building.getInstance().setFloors(21);
 
-        Building.getInstance().setElevators(4);
+        Building.getInstance().setElevators(3);
         ElevatorController.getInstance().startElevators();
 
         startUp();
@@ -117,7 +117,7 @@ public class Main {
 
             int i = 0;
             try {
-                Thread.sleep(6000);
+                Thread.sleep(4000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
