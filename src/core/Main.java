@@ -22,8 +22,6 @@ public class Main {
      * The following variables are what will be read in from XML
      */
 
-
-    private static long runTime;
     private static int peoplePerMinute;
     private static int duration;
     private static int numFloors;
@@ -31,18 +29,14 @@ public class Main {
     private static long elevatorTravelTime;
     private static long elevatorDoorTime;
     private static long elevatorOccupancy;
+    private static int defaultFloor;
+
     private static ElevatorPendingImpl globalPendingAlg;
     private static ElevatorCallImpl globalCallAlg;
-
     private static long startTime;
 
-    private static void startTimer() {
-        startTime = System.currentTimeMillis();
-    }
 
-    public static String getStartTime(){
-        return new Timestamp(startTime).toString();
-    }
+
 
     public static String currentTime(){
 
@@ -74,15 +68,19 @@ public class Main {
      * This sets all global values and constructs the necessary objects
      * before the simulation begins. //TODO: use this in XML parsing to create the simulation from XML doc.
      */
-    private void initialize(int floors, int elevators, int maxOccupancy,
-                            long travelTime, long doorOpTime, int people, int durationSecs){
-        numFloors = floors;
-        numElevators = elevators;
-        elevatorOccupancy = maxOccupancy;
-        elevatorTravelTime = travelTime;
-        elevatorDoorTime = doorOpTime;
-        peoplePerMinute = people;
-        duration = durationSecs;
+    private static void initializeGlobalVariables(String inFile){
+
+        ReadElevatorCSV data = new ReadElevatorCSV();
+        int[] dataArray = data.getData(inFile);
+        duration = dataArray[0];
+        numFloors = dataArray[1];
+        numElevators = dataArray[2];
+        elevatorOccupancy = dataArray[3];
+        elevatorTravelTime = dataArray[4];
+        elevatorDoorTime = dataArray[5];
+        defaultFloor = dataArray[6];
+        peoplePerMinute = dataArray[7];
+
     }
 
     /*
@@ -94,15 +92,31 @@ public class Main {
         setElevatorCallAlgorithm(globalCallAlg);
         setElevatorPendingAlgorithm(globalPendingAlg);
 
-
     }
 
-    private static void createPeople(){
 
+    private static void startTimer() {
+        startTime = System.currentTimeMillis();
+    }
+
+    public static String getStartTime(){
+        return new Timestamp(startTime).toString();
     }
 
 
     public static void main(String args[]) {
+        String inFile;
+
+        // if no alternative file given at command line, simulation runs default input.
+
+        if (args.length == 0){
+            inFile = "SE450/input/default.csv";
+        } else {
+            inFile = args[0];
+        }
+
+        initializeGlobalVariables(inFile);
+
         startTimer();
         Building.getInstance().setFloors(21);
 
