@@ -22,5 +22,7 @@ public interface Elevator extends Runnable {
     void pushButton(Request request);
     void call(Request request);
     void shutDown();
+    void endSimulation();
+    void quickElevatorSet(long doorWait, long floorWait, int defFloor, int Occupancy);
 
 }

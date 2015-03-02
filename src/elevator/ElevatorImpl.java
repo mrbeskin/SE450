@@ -11,7 +11,7 @@ import person.Person;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * The implementation class of the basic elevator.
@@ -19,15 +19,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Created by michael on 2/8/15.
  */
 public class ElevatorImpl implements Runnable, Elevator {
-    private final int homeFloor = 1;
-    private final int occupancy = 1;
-    private final long travelTime = 500;
-    private final long doorTime = 250;
+    private int homeFloor;
+    private int occupancy;
+    private long travelTime;
+    private long doorTime;
 
     private Direction direction;
 
     private boolean active;
     private boolean arrived = false;
+
+    private static boolean simulationOver = false;
 
     private int elevatorID;
     private int currentFloor;
@@ -35,15 +37,18 @@ public class ElevatorImpl implements Runnable, Elevator {
 
     private boolean consuming;
 
-    private CopyOnWriteArrayList<Request> riderRequests = new CopyOnWriteArrayList<Request>();
-    private CopyOnWriteArrayList<Request> floorRequests = new CopyOnWriteArrayList<Request>();
-    private CopyOnWriteArrayList<Person> occupants = new CopyOnWriteArrayList<Person>();
+    private ArrayList<Request> riderRequests = new ArrayList<Request>();
+    private ArrayList<Request> floorRequests = new ArrayList<Request>();
+    private ArrayList<Person> occupants = new ArrayList<Person>();
 
-    public ElevatorImpl(int idNum, int startingFloor) {
+    private final CountDownLatch startSignal;
+    private final CountDownLatch doneSignal;
+
+    public ElevatorImpl(int idNum, CountDownLatch startSignal, CountDownLatch doneSignal) {
         elevatorID = idNum;
-        currentFloor = startingFloor;
+        this.startSignal = startSignal;
+        this.doneSignal = doneSignal;
     }
-
 
     /*
      * The following methods are core methods
@@ -71,7 +76,7 @@ public class ElevatorImpl implements Runnable, Elevator {
             }
             // if there are no more requests set returning to true
             synchronized (floorRequests) {
-                if(floorRequests.isEmpty() && riderRequests.isEmpty()) {
+                if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
                     returning = true;
                 }
             }
@@ -83,13 +88,15 @@ public class ElevatorImpl implements Runnable, Elevator {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                }
-                else {
+                } else {
                     try {
                         synchronized (floorRequests) {
                             if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
                                 System.out.printf("%s Elevator %d has no requests and is waiting for input.\n",
                                         Main.currentTime(), elevatorID);
+                                if(simulationOver){
+                                    doneSignal.countDown();
+                                }
                                 direction = Direction.IDLE;
                                 floorRequests.wait();
                             }
@@ -104,10 +111,11 @@ public class ElevatorImpl implements Runnable, Elevator {
                 if (riderRequests.isEmpty() && floorRequests.isEmpty()) {
                     returning = true;
                 } else {
-                    returning = false; }
+                    returning = false;
+                }
             }
 
-            if (returning == true){
+            if (returning == true) {
                 if (currentFloor != homeFloor) {
                     addCallRequest(new Request(currentFloor, 1));
                 }
@@ -118,14 +126,14 @@ public class ElevatorImpl implements Runnable, Elevator {
     private void processRequests() {
         while (consuming) {
             if (direction == Direction.IDLE) {
-                synchronized (floorRequests){
+                synchronized (floorRequests) {
                     setDirection();
                 }
             } else if (onRequestedFloor()) {
                 arrive();
             } else {
                 try {
-                    if(!floorRequests.isEmpty() || !riderRequests.isEmpty()) {
+                    if (!floorRequests.isEmpty() || !riderRequests.isEmpty()) {
                         move();
                         arrived = false;
                     }
@@ -133,7 +141,7 @@ public class ElevatorImpl implements Runnable, Elevator {
                     System.out.print(flex);
                 }
             }
-            if (floorRequests.isEmpty() && riderRequests.isEmpty()){
+            if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
                 consuming = false;
             }
         }
@@ -145,7 +153,7 @@ public class ElevatorImpl implements Runnable, Elevator {
      */
 
     // Move to next floor according to direction
-    public void move() throws FloorOutOfBoundsException{
+    public void move() throws FloorOutOfBoundsException {
         int departed = currentFloor;
         try {
             Thread.sleep(travelTime); // move
@@ -154,12 +162,12 @@ public class ElevatorImpl implements Runnable, Elevator {
         }
         if (direction == Direction.UP) {
             currentFloor++;
-            if (currentFloor > Building.getInstance().getNumFloors()){
+            if (currentFloor > Building.getInstance().getNumFloors()) {
                 throw new FloorOutOfBoundsException("Elevator went above the building.\n");
             }
         } else if (direction == Direction.DOWN) {
             currentFloor--;
-            if (currentFloor <= 0){
+            if (currentFloor <= 0) {
                 throw new FloorOutOfBoundsException("Elevator went below the building.\n");
             }
         }
@@ -168,7 +176,7 @@ public class ElevatorImpl implements Runnable, Elevator {
     }
 
     // arrive at a floor. The only method that should allow removal of a request.
-    public void arrive(){
+    public void arrive() {
         openDoor();
         arrived = true;
         getOff();
@@ -178,7 +186,7 @@ public class ElevatorImpl implements Runnable, Elevator {
 
 
         synchronized (floorRequests) {
-            if (floorRequests.isEmpty() && riderRequests.isEmpty()){
+            if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
                 direction = Direction.IDLE;
             }
         }
@@ -189,7 +197,7 @@ public class ElevatorImpl implements Runnable, Elevator {
      */
 
     public void pushButton(Request request) {
-        if (request.getDirection() == direction){
+        if (request.getDirection() == direction) {
             addButtonRequest(request);
             System.out.printf("%s Elevator %d accepting a(n) %s request to floor %d %s\n",
                     Main.currentTime(), elevatorID, request.getDirection(), request.getTargetFloor(), requestString());
@@ -209,8 +217,8 @@ public class ElevatorImpl implements Runnable, Elevator {
     public void addCallRequest(Request r) {
         synchronized (floorRequests) {
             boolean alreadyThere = false;
-            for (int i = 0; i < floorRequests.size(); i ++){
-                if(floorRequests.get(i).getTargetFloor() == r.getTargetFloor()){
+            for (int i = 0; i < floorRequests.size(); i++) {
+                if (floorRequests.get(i).getTargetFloor() == r.getTargetFloor()) {
                     alreadyThere = true;
                 }
             }
@@ -222,17 +230,9 @@ public class ElevatorImpl implements Runnable, Elevator {
         }
     }
 
-    public void addButtonRequest(Request r){
+    public void addButtonRequest(Request r) {
         synchronized (floorRequests) {
-            // boolean alreadyThere = false;
-            //for (int i = 0; i < riderRequests.size(); i ++){
-            // if(riderRequests.get(i).getTargetFloor() == r.getTargetFloor()){
-            //    alreadyThere = true;
-            //}
-            //}
-            // if(!alreadyThere) {
             riderRequests.add(r);
-            // }
             requestSort();
             floorRequests.notifyAll();
         }
@@ -244,24 +244,24 @@ public class ElevatorImpl implements Runnable, Elevator {
      * The following methods are for setting the direction of travel
      * and abstracting binary travel questions
      */
-    private void setDirection(){
+    private void setDirection() {
         synchronized (floorRequests) {
             if (!floorRequests.isEmpty() && !riderRequests.isEmpty()) {
                 int floor = Math.abs(currentFloor - floorRequests.get(0).getTargetFloor());
                 int rider = Math.abs(currentFloor - riderRequests.get(0).getTargetFloor());
-                if (floor > rider){
+                if (floor > rider) {
                     direction = riderRequests.get(0).getDirection();
                 } else {
                     goToFloorRequest(floorRequests.get(0));
                 }
             }
 
-            if (floorRequests.isEmpty() && !riderRequests.isEmpty()){
+            if (floorRequests.isEmpty() && !riderRequests.isEmpty()) {
                 direction = riderRequests.get(0).getDirection();
             }
         }
 
-        if (riderRequests.isEmpty() && !floorRequests.isEmpty()){
+        if (riderRequests.isEmpty() && !floorRequests.isEmpty()) {
             if (floorRequests.get(0).getTargetFloor() < currentFloor) {
                 direction = Direction.DOWN;
             } else {
@@ -280,14 +280,14 @@ public class ElevatorImpl implements Runnable, Elevator {
     }
 
     // to check if there needs to be an arrival
-    private boolean onRequestedFloor(){
+    private boolean onRequestedFloor() {
         if (!riderRequests.isEmpty()) {
             if (riderRequests.get(0).getTargetFloor() == currentFloor) {
                 return true;
             }
         }
-        if(!floorRequests.isEmpty()){
-            if (floorRequests.get(0).getTargetFloor() == currentFloor){
+        if (!floorRequests.isEmpty()) {
+            if (floorRequests.get(0).getTargetFloor() == currentFloor) {
                 return true;
             }
         }
@@ -322,11 +322,15 @@ public class ElevatorImpl implements Runnable, Elevator {
     public void shutDown() {
         synchronized (floorRequests) {
             active = false;
-            System.out.printf ("%s " +
+            System.out.printf("%s " +
                             "Elevator %d shutting down.\n",
                     Main.currentTime(), elevatorID);
             floorRequests.notifyAll();
         }
+    }
+
+    public void endSimulation(){
+        simulationOver = true;
     }
 
     /*
@@ -350,7 +354,7 @@ public class ElevatorImpl implements Runnable, Elevator {
      * Methods for removing and adding from the request queues
      */
 
-    private void removeRequests(){
+    private void removeRequests() {
         synchronized (floorRequests) {
             if (!floorRequests.isEmpty()) {
                 if (currentFloor == floorRequests.get(0).getTargetFloor()) {
@@ -359,7 +363,7 @@ public class ElevatorImpl implements Runnable, Elevator {
             }
         }
         synchronized (riderRequests) {
-            if(!riderRequests.isEmpty()) {
+            if (!riderRequests.isEmpty()) {
                 for (int i = 0; i < riderRequests.size(); i++) {
                     if (currentFloor == riderRequests.get(i).getTargetFloor()) {
                         riderRequests.remove(i);
@@ -373,19 +377,66 @@ public class ElevatorImpl implements Runnable, Elevator {
     private void getRiders() {
         // array list of people waiting on floor
         synchronized (Building.getInstance().getFloor(currentFloor)) {
-            CopyOnWriteArrayList<Person> potentialRiders;
+            ArrayList<Person> potentialRiders;
+            // temporary array list of who is on floor generated
             potentialRiders = Building.getInstance().getFloor(currentFloor).elevatorArrival();
-            // if no requests left, let a person on
-            if (riderRequests.isEmpty() && floorRequests.isEmpty() && !potentialRiders.isEmpty()) {
-                Person first = potentialRiders.remove(0);
-                direction = first.getDesiredDirection();
-                pushButton(new Request(first.getStartFloor(), first.getTargetFloor()));
-            }
 
-            getIn(potentialRiders);
+            // if no requests left, let a person on
+
+
+            // go through remaining riders and let on ones that are going in the same direction
+            potentialRiders = getIn(potentialRiders);
 
             Building.getInstance().getFloor(currentFloor).elevatorDepart(potentialRiders);
         }
+    }
+
+    public ArrayList<Person> getIn(ArrayList<Person> potentialRiders) {
+
+        ArrayList<Person> tempOcc = occupants;
+        ArrayList<Person> tempFloor = new ArrayList<Person>();
+        synchronized (occupants) {
+                int room = occupancy - tempOcc.size();
+                Iterator<Person> itr = potentialRiders.iterator();
+
+                    while (itr.hasNext() && room > 0) {
+                        Person maybe = itr.next();
+
+                        if (riderRequests.isEmpty() && floorRequests.isEmpty()) {
+                            System.out.println("first: " + maybe.getId());
+                            direction = maybe.getDesiredDirection();
+                            tempOcc.add(maybe);
+                            pushButton(new Request(maybe.getStartFloor(), maybe.getTargetFloor()));
+                            room--;
+
+                        } else {
+                            System.out.println("potential occupant:" + maybe.getId());
+                            if (maybe.getDesiredDirection() == direction) {
+                                tempOcc.add(maybe);
+                                pushButton(new Request(maybe.getStartFloor(), maybe.getTargetFloor()));
+                                room--;
+
+                            } else {
+                                tempFloor.add(maybe);
+                            }
+                        }
+                    }
+                occupants =  tempOcc;
+                // TODO: remove
+                System.out.println("temp occ:");
+                for (int i = 0; i < tempOcc.size(); i++) {
+                    System.out.println(tempOcc.get(i).getId());
+                }
+                System.out.println("occupants being sent back:");
+                for (int i = 0; i < tempFloor.size(); i++) {
+                    System.out.println(tempFloor.get(i).getId());
+                    System.out.println("going from:");
+                    System.out.println(tempFloor.get(i).getStartFloor());
+                    System.out.println("to:");
+                    System.out.println(tempFloor.get(i).getTargetFloor());
+                }
+        }
+        return tempFloor;
     }
 
     private void requestSort() {
@@ -398,7 +449,7 @@ public class ElevatorImpl implements Runnable, Elevator {
                 Collections.reverse(floorRequests);
             }
         }
-        synchronized (riderRequests){
+        synchronized (riderRequests) {
             if (direction == Direction.UP) {
                 Collections.sort(riderRequests);
             }
@@ -412,18 +463,18 @@ public class ElevatorImpl implements Runnable, Elevator {
     /*
      * string building method for real time reports
      */
-    private String requestString(){
+    private String requestString() {
         String floorString = "[Floor Requests: ";
         String riderString = "[Rider Requests: ";
         String returnString;
 
-        if(!floorRequests.isEmpty()) {
+        if (!floorRequests.isEmpty()) {
             for (Request floorRequest : floorRequests) {
                 floorString = floorString + floorRequest.getTargetFloor() + " ";
             }
         }
-        if (!riderRequests.isEmpty()){
-            for(int i = 0; i < riderRequests.size(); i ++){
+        if (!riderRequests.isEmpty()) {
+            for (int i = 0; i < riderRequests.size(); i++) {
                 riderString = riderString + riderRequests.get(i).getTargetFloor() + " ";
             }
         }
@@ -436,8 +487,8 @@ public class ElevatorImpl implements Runnable, Elevator {
      */
 
     // to check if responding to a floor call
-    public boolean isFloorCall(){
-        if(!riderRequests.isEmpty() && !floorRequests.isEmpty()) {
+    public boolean isFloorCall() {
+        if (!riderRequests.isEmpty() && !floorRequests.isEmpty()) {
             if (direction == Direction.UP) {
                 if (riderRequests.get(0).getTargetFloor() > floorRequests.get(0).getTargetFloor()) {
                     return true;
@@ -449,15 +500,15 @@ public class ElevatorImpl implements Runnable, Elevator {
                 }
             }
         }
-        if(riderRequests.isEmpty()){
+        if (riderRequests.isEmpty()) {
             return true;
         }
         return false;
     }
 
-    public int getCurrentDestination(){
+    public int getCurrentDestination() {
         if (!floorRequests.isEmpty() && !riderRequests.isEmpty()) {
-            if(direction == Direction.UP) {
+            if (direction == Direction.UP) {
                 if (floorRequests.get(0).getTargetFloor() < riderRequests.get(0).getTargetFloor()) {
                     return floorRequests.get(0).getTargetFloor();
                 } else {
@@ -465,7 +516,7 @@ public class ElevatorImpl implements Runnable, Elevator {
                 }
             }
 
-            if (direction == Direction.DOWN){
+            if (direction == Direction.DOWN) {
                 if (floorRequests.get(0).getTargetFloor() > riderRequests.get(0).getTargetFloor()) {
                     return floorRequests.get(0).getTargetFloor();
                 } else {
@@ -478,35 +529,21 @@ public class ElevatorImpl implements Runnable, Elevator {
         if (floorRequests.isEmpty() && !riderRequests.isEmpty()) {
             return riderRequests.get(0).getTargetFloor();
         }
-        if(riderRequests.isEmpty() && !floorRequests.isEmpty()){
+        if (riderRequests.isEmpty() && !floorRequests.isEmpty()) {
             return floorRequests.get(0).getTargetFloor();
         }
-        return(-1);
+        return (-1);
     }
 
-    public void getIn(CopyOnWriteArrayList<Person> potentialRiders){
-        synchronized (occupants) {
-            CopyOnWriteArrayList<Person> tempOcc = occupants;
-            int room = occupancy - tempOcc.size();
-            Iterator<Person> itr = potentialRiders.iterator();
-            while (itr.hasNext() && room < occupancy) {
-                Person potentialOccupant = itr.next();
-                if (potentialOccupant.getDesiredDirection() == direction) {
-                    itr.remove();
-                    tempOcc.add(potentialOccupant);
-                    pushButton(new Request(potentialOccupant.getStartFloor(), potentialOccupant.getTargetFloor()));
-                    room++;
-                }
-            }
-            occupants = tempOcc;
-        }
-    }
+
 
     /*
      * gets
      */
 
-    public boolean arrivedAlready() { return arrived; }
+    public boolean arrivedAlready() {
+        return arrived;
+    }
 
     public int getElevatorID() {
         return elevatorID;
@@ -524,7 +561,7 @@ public class ElevatorImpl implements Runnable, Elevator {
         return consuming;
     }
 
-    public boolean isGoingTo(int floor){
+    public boolean isGoingTo(int floor) {
         synchronized (floorRequests) {
             for (int i = 0; i < floorRequests.size(); i++) {
                 if (floorRequests.get(i).getTargetFloor() == floor) {
@@ -541,4 +578,31 @@ public class ElevatorImpl implements Runnable, Elevator {
         }
         return false;
     }
+
+
+    /*
+     * sets
+     */
+
+    public void setDoorTime(long door) {
+        doorTime = door;
+    }
+
+    public void setTravelTime(long time){
+        travelTime = time;
+    }
+
+    public void setHomeFloor(int floor){
+        homeFloor = floor;
+    }
+
+    public void setOccupancy(int occ){
+        occupancy = occ;
+    }
+
+    public void quickElevatorSet(long door, long time, int floor, int occ){
+        setDoorTime(door); setTravelTime(time); setHomeFloor(floor); setOccupancy(occ);
+        currentFloor = floor;
+    }
+
 }

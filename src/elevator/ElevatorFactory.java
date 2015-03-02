@@ -3,6 +3,8 @@ package elevator;
 import elevator.Elevator;
 import elevator.ElevatorImpl;
 
+import java.util.concurrent.CountDownLatch;
+
 /**
  * elevator.ElevatorFactory is for creating instances of individual elevators.
  *
@@ -10,9 +12,9 @@ import elevator.ElevatorImpl;
  */
 public class ElevatorFactory {
 
-    public static Elevator build(int elevatorID){
+    public static Elevator build(int elevatorID, CountDownLatch startSignal, CountDownLatch doneSingal){
 
-        return new ElevatorImpl(elevatorID, 1);
+        return new ElevatorImpl(elevatorID, startSignal, doneSingal);
 
     }
 

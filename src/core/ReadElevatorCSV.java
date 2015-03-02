@@ -29,6 +29,9 @@ public class ReadElevatorCSV {
             String[] outArray = dataString.split(",");
             intArray = new int[arrayLength];
             for (int i = 0; i < arrayLength; i++){
+                outArray[i] = outArray[i].substring(1, outArray[i].length() - 1);
+            }
+            for (int i = 0; i < arrayLength; i++){
                 intArray[i] = Integer.parseInt(outArray[i]);
             }
 

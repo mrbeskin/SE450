@@ -7,7 +7,7 @@ import building.Building;
 import core.Direction;
 
 import java.util.Random;
-public class Person {
+public class Person implements Comparable<Person>{
     int id;
     private Request destination;
     int maxFloor = Building.getInstance().getNumFloors();
@@ -59,6 +59,13 @@ public class Person {
     public void requestElevator() {
 
     }
+
+    public int compareTo(Person other) {
+        if (this.getId() > other.getId()) { return 1; }
+        if (this.getId() < other.getId()) { return -1; }
+        return 0;
+    }
+
 
     public int getStartFloor() {return destination.getStartFloor(); }
     public int getTargetFloor() {return destination.getTargetFloor(); }

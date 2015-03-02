@@ -1,6 +1,9 @@
 package controller.callAlgorithms;
 
+import elevator.Elevator;
 import request.Request;
+
+import java.util.ArrayList;
 
 /**
  * This interface describes the behavior of all algorithms
@@ -12,6 +15,5 @@ import request.Request;
 public interface ElevatorCall {
 
     public boolean processCall(Request request);
-
 
 }

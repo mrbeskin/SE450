@@ -6,13 +6,18 @@ import controller.callAlgorithms.ElevatorCall;
 import controller.callAlgorithms.ElevatorCallImpl;
 import controller.pendingAlgorithms.ElevatorPending;
 import controller.pendingAlgorithms.ElevatorPendingImpl;
+import elevator.Elevator;
 import person.Person;
 
 
+import java.lang.reflect.Array;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
+
 /**
  * Created by michael on 2/18/15.
  */
@@ -28,14 +33,19 @@ public class Main {
     private static int numElevators;
     private static long elevatorTravelTime;
     private static long elevatorDoorTime;
-    private static long elevatorOccupancy;
+    private static int elevatorOccupancy;
     private static int defaultFloor;
 
     private static ElevatorPendingImpl globalPendingAlg;
     private static ElevatorCallImpl globalCallAlg;
     private static long startTime;
 
+    private static long endTime;
+    private static long peopleSecs;
+    private static long startMillis;
 
+    static CountDownLatch startSignal;
+    static CountDownLatch doneSignal;
 
 
     public static String currentTime(){
@@ -52,7 +62,13 @@ public class Main {
     private static void newPerson(int id){
         Person person = new Person(id);
         person.setRequest();
+        System.out.printf("%s Person P%d created on floor %d wants to go %s to floor %d\n",
+                currentTime(), person.getId(), person.getStartFloor(), person.getDesiredDirection(), person.getTargetFloor());
+        System.out.printf("%s Person P%d presses %s on Floor %d\n",
+                currentTime(), person.getId(), person.getDesiredDirection(), person.getStartFloor() );
         Building.getInstance().putOnFloor(person.getStartFloor(), person);
+
+
     }
 
     private static void setElevatorCallAlgorithm(ElevatorCall callAlgorithm){
@@ -66,7 +82,7 @@ public class Main {
 
     /*
      * This sets all global values and constructs the necessary objects
-     * before the simulation begins. //TODO: use this in XML parsing to create the simulation from XML doc.
+     * before the simulation begins.
      */
     private static void initializeGlobalVariables(String inFile){
 
@@ -77,7 +93,7 @@ public class Main {
         numElevators = dataArray[2];
         elevatorOccupancy = dataArray[3];
         elevatorTravelTime = dataArray[4];
-        elevatorDoorTime = dataArray[5];
+        elevatorDoorTime = dataArray[5]/2;
         defaultFloor = dataArray[6];
         peoplePerMinute = dataArray[7];
 
@@ -87,13 +103,28 @@ public class Main {
      * Used to start the simulation when all values are set.
      */
     private static void startUp() throws NullPointerException{
+        // set algorithms
         globalCallAlg = new ElevatorCallImpl(ElevatorController.getInstance().getElevatorArray());
         globalPendingAlg = new ElevatorPendingImpl();
         setElevatorCallAlgorithm(globalCallAlg);
         setElevatorPendingAlgorithm(globalPendingAlg);
 
+
+        // set person wait time
+        peopleSecs = (60 / peoplePerMinute) * 1000;
+
+        // set end time
+        endTime = duration * 60000;
+
+        // set startMillis
+
+        startMillis = System.currentTimeMillis() - startTime;
+
     }
 
+    private static long currentLocalMillis(){
+        return System.currentTimeMillis() - startTime;
+    }
 
     private static void startTimer() {
         startTime = System.currentTimeMillis();
@@ -103,40 +134,62 @@ public class Main {
         return new Timestamp(startTime).toString();
     }
 
+    public static CountDownLatch getStartSignal() {return startSignal;}
+    public static CountDownLatch getDoneSignal() {return doneSignal; }
+
 
     public static void main(String args[]) {
+
         String inFile;
 
         // if no alternative file given at command line, simulation runs default input.
-
         if (args.length == 0){
-            inFile = "SE450/input/default.csv";
+            inFile = System.getProperty("user.dir") + "/src/input/default.csv";
         } else {
             inFile = args[0];
         }
 
+        // get files from csv
         initializeGlobalVariables(inFile);
-
+        // build building and set algorithms
+        Building.getInstance().setFloors(numFloors);
+        Building.getInstance().setElevators(numElevators);
         startTimer();
-        Building.getInstance().setFloors(21);
-
-        Building.getInstance().setElevators(3);
-        ElevatorController.getInstance().startElevators();
-
+        startSignal = new CountDownLatch(1);
+        doneSignal = new CountDownLatch(numElevators);
+        ElevatorController.getInstance().startElevators(elevatorDoorTime, elevatorTravelTime, defaultFloor, elevatorOccupancy);
         startUp();
+        startSignal.countDown();
+        // sleep to ensure all variables initialized before start
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException e){
+            e.printStackTrace();
+        }
+        int i = 1;
+        // while end time is not reached build people
+        while (currentLocalMillis() <= endTime) {
 
-
-
-        while (true) {
-
-            int i = 0;
             try {
-                Thread.sleep(4000);
+                newPerson(i);
+                i++;
+                Thread.sleep(peopleSecs);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            newPerson(i);
-            i++;
         }
+
+        ElevatorController.getInstance().warnElevatorsEnd();
+
+        try {
+            doneSignal.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Simulation Over");
+
     }
+
+
 }

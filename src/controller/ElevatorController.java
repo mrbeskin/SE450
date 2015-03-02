@@ -3,7 +3,9 @@ package controller;
 import building.Building;
 import controller.callAlgorithms.ElevatorCall;
 import controller.pendingAlgorithms.ElevatorPending;
+import core.Main;
 import elevator.Elevator;
+import elevator.ElevatorFactory;
 import elevator.ElevatorImpl;
 import request.Request;
 
@@ -26,13 +28,15 @@ public class ElevatorController {
         return instance;
     }
 
-    public void startElevators(){
+    public void startElevators(long door, long travel, int floor, int occupancy){
         if (elevatorArray == null) {
             elevatorArray = new ArrayList<Elevator>();
             for(int i = 1; i <= Building.getInstance().getNumElevators(); i ++){
-                elevatorArray.add(new ElevatorImpl(i, 1));
-                Thread thread = new Thread((Elevator) elevatorArray.get(i - 1));
+                Elevator elevator = ElevatorFactory.build(i, Main.getStartSignal(), Main.getDoneSignal());
+                elevatorArray.add(elevator);
+                Thread thread = new Thread(elevator);
                 thread.start();
+                elevator.quickElevatorSet(door, travel, floor, occupancy);
             }
         }
     }
@@ -66,12 +70,18 @@ public class ElevatorController {
 
     public void sendNewCall(Request request) {
         synchronized (elevatorArray) {
-            System.out.printf("Got the call from floor %d to floor %d!\n", request.getStartFloor(), request.getTargetFloor());
             if (callAlgorithm.processCall(request)) {
-                System.out.println("Success!");
             } else {
+                System.out.println("Sending to pending");
                 addToPending(request);
             }
+        }
+    }
+
+    public void warnElevatorsEnd(){
+        for(Object elevator : elevatorArray){
+            Elevator elv = (Elevator) elevator;
+            elv.endSimulation();
         }
     }
 

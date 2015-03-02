@@ -15,7 +15,7 @@ public class Floor {
     private int floorID;
     private boolean upPressed;
     private boolean downPressed;
-    private volatile CopyOnWriteArrayList<Person> personQueue = new CopyOnWriteArrayList<Person>();
+    private ArrayList<Person> personQueue = new ArrayList<Person>();
 
 
     public Floor(int floorNumber){
@@ -37,7 +37,7 @@ public class Floor {
         ElevatorController.getInstance().sendNewCall(request);
     }
 
-    public CopyOnWriteArrayList<Person> elevatorArrival(){
+    public ArrayList<Person> elevatorArrival(){
 
         synchronized(personQueue){
             return personQueue;
@@ -45,7 +45,7 @@ public class Floor {
 
     }
 
-    public void elevatorDepart(CopyOnWriteArrayList<Person> remaining){
+    public void elevatorDepart(ArrayList<Person> remaining){
         synchronized(personQueue){
             personQueue = remaining;
             for (int i = 0; i < personQueue.size(); i ++){
