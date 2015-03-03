@@ -189,6 +189,16 @@ public class Main {
 
         System.out.println("Simulation Over");
 
+        while(ElevatorController.getInstance().endCheck()){
+            try{
+                Thread.sleep(50);
+            } catch (InterruptedException ie){
+                System.out.println(ie);
+            }
+        }
+
+        System.out.println("ALL DONE");
+
     }
 
 

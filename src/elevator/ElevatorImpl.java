@@ -28,6 +28,7 @@ public class ElevatorImpl implements Runnable, Elevator {
 
     private boolean active;
     private boolean arrived = false;
+    private boolean started = false;
 
     private static boolean simulationOver = false;
 
@@ -63,17 +64,19 @@ public class ElevatorImpl implements Runnable, Elevator {
             synchronized (floorRequests) {
                 if (!riderRequests.isEmpty() || !floorRequests.isEmpty()) {
                     consuming = true;
+                    started = true;
                 } else {
-                    consuming = false;
+                        consuming = false;
+                    }
                 }
-            }
+
             // if there are, process requests
             if (consuming == true) {
                 processRequests();
                 // else check if there are more requests
-            } else {
-                ElevatorController.getInstance().pendingResponse(elevatorID);
-            }
+            }// else {
+               // ElevatorController.getInstance().pendingResponse(elevatorID);
+           // }
             // if there are no more requests set returning to true
             synchronized (floorRequests) {
                 if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
@@ -94,9 +97,12 @@ public class ElevatorImpl implements Runnable, Elevator {
                             if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
                                 System.out.printf("%s Elevator %d has no requests and is waiting for input.\n",
                                         Main.currentTime(), elevatorID);
-                                if(simulationOver){
+                                if(started) {
                                     doneSignal.countDown();
                                 }
+                                //if(simulationOver){
+                                 //   doneSignal.countDown();
+                                //}
                                 direction = Direction.IDLE;
                                 floorRequests.wait();
                             }
@@ -188,6 +194,7 @@ public class ElevatorImpl implements Runnable, Elevator {
         synchronized (floorRequests) {
             if (floorRequests.isEmpty() && riderRequests.isEmpty()) {
                 direction = Direction.IDLE;
+                ElevatorController.getInstance().pendingResponse(elevatorID);
             }
         }
     }

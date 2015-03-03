@@ -3,6 +3,7 @@ package controller.pendingAlgorithms;
 import elevator.Elevator;
 import request.Request;
 
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -10,5 +11,5 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public interface ElevatorPending {
 
-    public void sendRequests(CopyOnWriteArrayList<Request> pending, Elevator elevator);
+    public void sendRequests(ArrayList<Request> pending, Elevator elevator);
 }

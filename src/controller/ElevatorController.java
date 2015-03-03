@@ -19,7 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ElevatorController {
     ElevatorCall callAlgorithm;
     ElevatorPending pendingAlgorithm;
-    CopyOnWriteArrayList pendingRequests = new CopyOnWriteArrayList<Request>();
+    ArrayList pendingRequests = new ArrayList<Request>();
     ArrayList elevatorArray;
 
     private static ElevatorController instance = new ElevatorController();
@@ -62,8 +62,12 @@ public class ElevatorController {
 
     public void pendingResponse(int elevatorID){
         synchronized (elevatorArray) {
+            System.out.println("In pending in controller"); //TODO remove
             if (pendingAlgorithm != null) {
-                pendingAlgorithm.sendRequests(pendingRequests, (Elevator) elevatorArray.get(elevatorID - 1));
+                synchronized (pendingRequests) {
+                    System.out.println("in here too!");
+                    pendingAlgorithm.sendRequests(pendingRequests, (Elevator) elevatorArray.get(elevatorID - 1));
+                }
             }
         }
     }
@@ -83,6 +87,17 @@ public class ElevatorController {
             Elevator elv = (Elevator) elevator;
             elv.endSimulation();
         }
+    }
+
+    public boolean endCheck(){
+        boolean check = false;
+        for (int i = 0; i < elevatorArray.size(); i++){
+            Elevator elevator = (Elevator) elevatorArray.get(i);
+            if(elevator.getCurrentFloor() > 1){
+                check = true;
+            }
+        }
+        return check;
     }
 
     public ArrayList<Elevator> getElevatorArray(){

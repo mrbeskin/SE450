@@ -6,6 +6,7 @@ import core.Direction;
 import elevator.Elevator;
 import request.Request;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -18,20 +19,29 @@ public class ElevatorPendingImpl implements ElevatorPending {
     public ElevatorPendingImpl(){
     }
 
-    public void sendRequests(CopyOnWriteArrayList<Request> pendingRequests, Elevator elevator){
+    public void sendRequests(ArrayList<Request> pendingRequests, Elevator elevator){
 
         Iterator<Request> itr = pendingRequests.iterator();
         Request firstRequest = null;
         if (itr.hasNext()){
+            System.out.println("pending start");
             firstRequest = itr.next();
             elevator.call(new Request(elevator.getCurrentFloor(), firstRequest.getStartFloor()));
             itr.remove();
         }
         while(itr.hasNext()){
+            // TODO: remove
+            System.out.println("In pending Requests");
             Request nextRequest = itr.next();
             try {
                 if (nextRequest.getDirection() == firstRequest.getDirection()) {
                     if(isDirectionSame(firstRequest, nextRequest)){
+                        System.out.println("first Request:");
+                        System.out.println(firstRequest.getStartFloor());
+                        System.out.println(firstRequest.getTargetFloor());
+                        System.out.print("second request:");
+                        System.out.println(nextRequest.getStartFloor());
+                        System.out.println(nextRequest.getTargetFloor());
                         itr.remove();
                         elevator.call(new Request(elevator.getCurrentFloor(), nextRequest.getStartFloor()));
                     }
