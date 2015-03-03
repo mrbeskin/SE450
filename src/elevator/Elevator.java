@@ -18,7 +18,8 @@ public interface Elevator extends Runnable {
     boolean isConsuming();
     boolean isFloorCall();
     boolean arrivedAlready();
-    public int getCurrentDestination();
+    int getCurrentDestination();
+    String requestString();
     void pushButton(Request request);
     void call(Request request);
     void shutDown();

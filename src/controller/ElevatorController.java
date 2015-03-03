@@ -62,10 +62,8 @@ public class ElevatorController {
 
     public void pendingResponse(int elevatorID){
         synchronized (elevatorArray) {
-            System.out.println("In pending in controller"); //TODO remove
             if (pendingAlgorithm != null) {
                 synchronized (pendingRequests) {
-                    System.out.println("in here too!");
                     pendingAlgorithm.sendRequests(pendingRequests, (Elevator) elevatorArray.get(elevatorID - 1));
                 }
             }
@@ -76,7 +74,6 @@ public class ElevatorController {
         synchronized (elevatorArray) {
             if (callAlgorithm.processCall(request)) {
             } else {
-                System.out.println("Sending to pending");
                 addToPending(request);
             }
         }
@@ -98,6 +95,13 @@ public class ElevatorController {
             }
         }
         return check;
+    }
+
+    public void shutDownAll(){
+        for(int i = 0; i < elevatorArray.size(); i++){
+            Elevator elevator = (Elevator) elevatorArray.get(i);
+            elevator.shutDown();
+        }
     }
 
     public ArrayList<Elevator> getElevatorArray(){

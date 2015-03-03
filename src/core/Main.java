@@ -62,9 +62,9 @@ public class Main {
     private static void newPerson(int id){
         Person person = new Person(id);
         person.setRequest();
-        System.out.printf("%s Person P%d created on floor %d wants to go %s to floor %d\n",
+        System.out.printf("%s Person P%d created on floor %d, wants to go %s to floor %d\n",
                 currentTime(), person.getId(), person.getStartFloor(), person.getDesiredDirection(), person.getTargetFloor());
-        System.out.printf("%s Person P%d presses %s on Floor %d\n",
+        System.out.printf("%s Person P%d presses %s button on Floor %d\n",
                 currentTime(), person.getId(), person.getDesiredDirection(), person.getStartFloor() );
         Building.getInstance().putOnFloor(person.getStartFloor(), person);
 
@@ -187,8 +187,6 @@ public class Main {
             e.printStackTrace();
         }
 
-        System.out.println("Simulation Over");
-
         while(ElevatorController.getInstance().endCheck()){
             try{
                 Thread.sleep(50);
@@ -197,7 +195,13 @@ public class Main {
             }
         }
 
-        System.out.println("ALL DONE");
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException ex){
+            System.out.println(ex);
+        }
+        ElevatorController.getInstance().shutDownAll();
+        System.out.println("Simulation over/placeholder for end data");
 
     }
 

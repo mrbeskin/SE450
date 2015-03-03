@@ -1,6 +1,7 @@
 package controller.callAlgorithms;
 
 import core.Direction;
+import core.Main;
 import elevator.Elevator;
 import request.Request;
 
@@ -57,7 +58,11 @@ public class ElevatorCallImpl implements ElevatorCall {
                             elevators.get(i).getDirection() == Direction.IDLE) {
                         elevators.get(i).call(new Request(elevators.get(i).getCurrentFloor(),
                                 currentRequest.getStartFloor()));
+                        System.out.printf("%s Elevator %d going to Floor %d for %s request %s\n",
+                                Main.currentTime(), elevators.get(i).getElevatorID(), currentRequest.getStartFloor(),
+                            currentRequest.getDirection(), elevators.get(i).requestString());
                         return true;
+
                     }
                 }
             }
@@ -77,12 +82,18 @@ public class ElevatorCallImpl implements ElevatorCall {
                     if (isMovingTowardsThisFloor(elevators.get(i), currentRequest)) {
                         elevators.get(i).call(new Request(elevators.get(i).getCurrentFloor(),
                                 currentRequest.getStartFloor()));
+                        System.out.printf("%s Elevator %d going to Floor %d for %s request %s\n",
+                                Main.currentTime(), elevators.get(i).getElevatorID(), currentRequest.getStartFloor(),
+                                currentRequest.getDirection(), elevators.get(i).requestString());
                         return true;
                     }
                 } else {
                     if (isMovingTowardsThisFloor(elevators.get(i), currentRequest)) {
                         elevators.get(i).call(new Request(elevators.get(i).getCurrentFloor(),
                                 currentRequest.getStartFloor()));
+                        System.out.printf("%s Elevator %d going to Floor %d for %s request %s\n",
+                                Main.currentTime(), elevators.get(i).getElevatorID(), currentRequest.getStartFloor(),
+                                currentRequest.getDirection(), elevators.get(i).requestString());
                         return true;
                     }
                 }
@@ -122,6 +133,9 @@ public class ElevatorCallImpl implements ElevatorCall {
             if (elevators.get(i).getDirection() == Direction.IDLE) {
                 elevators.get(i).call(new Request(elevators.get(i).getCurrentFloor(),
                         currentRequest.getStartFloor()));
+                System.out.printf("%s Elevator %d going to Floor %d for %s request %s\n",
+                        Main.currentTime(), elevators.get(i).getElevatorID(), currentRequest.getStartFloor(),
+                        currentRequest.getDirection(), elevators.get(i).requestString());
                 return true;
             }
         }
